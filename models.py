@@ -1,4 +1,5 @@
-from peewee import Model, CharField, AutoField, TextField, ForeignKeyField
+from flask_login import UserMixin
+from peewee import Model, CharField, AutoField, TextField, ForeignKeyField, IntegerField
 from config import DATABASE
 import json
 
@@ -38,3 +39,10 @@ class SubArticleTest(BaseModel):
     question = TextField()
     options = TextField()  # Зберігає JSON дані
     correct_answers = TextField()  # Зберігає JSON дані
+
+
+class User(BaseModel, UserMixin):
+    email = CharField(unique=True)
+    password = CharField()
+    current_level = IntegerField(default=0)  # Додано нове поле для рівня проходження
+    additional_tests_completed = IntegerField(default=0)  # Додано нове поле для кількості додаткових тестів

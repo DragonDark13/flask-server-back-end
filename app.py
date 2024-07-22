@@ -1,19 +1,34 @@
 import peewee
-from flask import Flask, jsonify
+from flask import Flask, render_template, redirect, url_for, request, flash
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from config import DATABASE
-from models import Event, MainArticleTest, Subtopic, SubArticleTest, Content
-from flask_cors import CORS
+from models import Event, MainArticleTest, Subtopic, SubArticleTest, Content, User
 import json
 from data import events_data
 from peewee import IntegrityError
+from flask_bcrypt import Bcrypt
+
+from flask import Flask, request, jsonify
+from flask_bcrypt import Bcrypt  # Імпорт Flask-Bcrypt
+from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)
+app.secret_key = 'your_secret_key'
+bcrypt = Bcrypt(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 DATABASE.connect()
-if Event.table_exists():
-    Event.drop_table()
-DATABASE.create_tables([Event, MainArticleTest, Subtopic, SubArticleTest, Content], safe=True)
+
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'
+
+
+def create_tables():
+    with DATABASE:
+        DATABASE.create_tables([User, Event, MainArticleTest, Subtopic, SubArticleTest, Content], safe=True)
+
+
+create_tables()
 
 # Збереження даних у базі
 with DATABASE.atomic():
@@ -158,6 +173,109 @@ def before_request():
 def after_request(response):
     DATABASE.close()
     return response
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.get(User.id == user_id)
+
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+        try:
+            user = User.create(email=email, password=hashed_password)
+            login_user(user)
+            return redirect(url_for('index'))
+        except IntegrityError:
+            flash('Email already exists.')
+
+
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.json
+    email = data.get('email')
+    password = data.get('password')
+
+    try:
+        user = User.get(User.email == email)
+        if bcrypt.check_password_hash(user.password, password):
+            # Згенеруйте токен
+            token = 'your_generated_token_here'
+
+            # Зберігайте додаткові дані користувача, які вам потрібні
+            user_data = {
+                'id': user.id,
+                'email': user.email,
+                'name': user.password,
+                'current_level': user.current_level,
+                'additional_tests_completed': user.additional_tests_completed
+            }
+
+            # Відповідь з токеном, даними користувача та статусом
+            return jsonify({
+                'success': True,
+                'token': token,
+                'user_data': user_data,
+                'message': 'Login successful'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'Invalid email or password'
+            }), 401
+    except User.DoesNotExist:
+        return jsonify({
+            'success': False,
+            'message': 'Invalid email or password'
+        }), 401
+
+
+@app.route('/update_user', methods=['POST'])
+@login_required
+def update_user():
+    user_id = current_user.id
+    data = request.json
+    current_level = data.get('current_level')
+    additional_tests_completed = data.get('additional_tests_completed')
+
+    user = User.get(User.id == user_id)
+    if current_level is not None:
+        user.current_level = current_level
+    if additional_tests_completed is not None:
+        user.additional_tests_completed = additional_tests_completed
+    user.save()
+
+    user_data = {
+        'id': user.id,
+        'email': user.email,
+        'current_level': user.current_level,
+        'additional_tests_completed': user.additional_tests_completed
+    }
+
+    return jsonify({'message': 'User updated successfully', 'user': user_data}), 200
+
+
+@app.route('/complete_test', methods=['POST'])
+@login_required
+def complete_test():
+    user_id = current_user.id
+    data = request.json
+    additional_tests_completed = data.get('additional_tests_completed', 1)
+
+    user = User.get(User.id == user_id)
+    user.additional_tests_completed += additional_tests_completed
+    user.save()
+
+    return jsonify({'message': 'Test completed and user updated'}), 200
+
+
+@app.route('/')
+def index():
+    return f'Hello, {current_user.username}!'
 
 
 if __name__ == '__main__':
