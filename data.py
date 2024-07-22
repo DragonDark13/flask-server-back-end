@@ -1,0 +1,423 @@
+events_data = [
+    {
+        "date": "2,5 мільйона років до н.е.",
+        "text": "Поява Homo Habilis, одного з найстаріших предків людини.",
+        "content": [
+            {
+                "text": "In the intricate tapestry of human evolution, one particular chapter stands out prominently — the emergence of Homo Habilis, the \"Handy Man,\" around 2.5 million years ago. This species, considered one of the earliest ancestors of humanity, played a pivotal role in shaping the trajectory of our evolutionary journey. In this article, we will explore the key aspects of Homo Habilis, from their physical characteristics to their cultural innovations, shedding light on the remarkable milestones of this transitional period."
+            },
+            {
+                "type": "title",
+                "text": "Discovery of Homo Habilis:"
+            },
+            {
+                "text": "In 1959, the legendary pair of researchers Louis and Mary Leakey made groundbreaking discoveries at several historical sites on the slopes of Olduvai Gorge in Tanzania. Already renowned for their previous findings, their research marked a new stage in understanding human evolution."
+            },
+            {
+                "text": "In 1960, the Leakeys introduced a new species — Homo Habilis. This pivotal moment in paleontological history unveiled a key link in the chain of evolution, characterized by an increase in brain size and the use of tools. Dental parts discovered by the Leakeys confirmed the existence of a species later named Homo Habilis — the \"Handy Man.\""
+            },
+            {
+                "text": "This discovery proved instrumental in comprehending how our ancestors evolved from primitive forms to intellectually advanced individuals. Homo Habilis defined a new stage in understanding evolutionary processes leading to the emergence of Homo sapiens. Since then, numerous discoveries have further solidified our understanding of this species and its contribution to the formation of the Homo genus."
+            }
+        ],
+        "mainArticleTest": {
+            "questions": [
+                "What were the primary living conditions of Homo Habilis during the early Pleistocene period?",
+                "How did Homo Habilis adapt to the diverse environments they encountered?",
+                "In what ways did Homo Habilis utilize tools for survival and daily activities?"
+            ],
+            "options": [
+                [
+                    "Constructed permanent structures",
+                    "Sought refuge in caves and rock overhangs",
+                    "Built climate-controlled shelters",
+                    "Lived in nomadic tree-dwelling communities"
+                ],
+                [
+                    "Exclusive reliance on a single environment",
+                    "Limited adaptation strategies",
+                    "Varied adaptations to different surroundings",
+                    "Migration to other continents for survival"
+                ],
+                [
+                    "Solely for artistic expression",
+                    "Primarily for social communication",
+                    "Mainly for hunting and gathering activities",
+                    "Exclusively for construction purposes"
+                ]
+            ],
+            "correctAnswers": [
+                1, 3, 3
+            ]
+        },
+        "achieved": "Опис досягнення",
+        "subtopics": [
+            {
+                "title": "Physical Characteristics",
+                "content": [
+                    {
+                        "text": "In the intricate tapestry of human evolution, Homo Habilis emerges as a pivotal figure, marking a significant step in the development of the human lineage. Let's delve into the physical characteristics, appearance, and dimensions of Homo Habilis to better understand how this species adapted to its environment."
+                    },
+                    {
+                        "type": "title",
+                        "text": "Brain Size:"
+                    },
+                    {
+                        "text": "One of the key features of Homo Habilis is the enlargement of brain size compared to its predecessors. Although far from Homo sapiens, the brain size of Homo Habilis already exceeded that observed in Australopithecus. This indicates a certain level of intellectual development and possibly points to improved cognitive abilities."
+                    },
+                    {
+                        "type": "title",
+                        "text": "General Anatomy and Dimensions:"
+                    },
+                    {
+                        "text": "Homo Habilis exhibited bipedal locomotion, enabling free movement on hind limbs. However, their arms remained relatively long, indicating the retention of some primitive traits from their ancestors. This combination of bipedality and developed forelimbs suggests adaptation to at least two different environments—walking on land and using tools."
+                    },
+                    {
+                        "text": "The dimensions of Homo Habilis varied, but average values indicate a height of approximately 1.2–1.4 meters. The weight could range from about 33–55 kilograms, depending on the specific individual and environmental factors."
+                    },
+                    {
+                        "type": "title",
+                        "text": "Appearance:"
+                    },
+                    {
+                        "text": "The appearance of Homo Habilis can be described as a general human-like entity. Their faces already somewhat resembled those of modern humans, with less pronounced jaws and teeth but already an upwardly directed forehead. In appearance, they somewhat resemble their Australopithecus ancestors but with significantly greater intelligence."
+                    }
+                ],
+                "subArticleTest": {
+                    "questions": [
+                        "What physical features of Homo Habilis suggest a certain level of brain development and cognitive abilities?",
+                        "How did the combination of bipedality and long forelimbs in Homo Habilis contribute to its adaptation to different environments?",
+                        "How did the body dimensions of Homo Habilis contribute to its life strategy and interaction with the surrounding environment?"
+                    ],
+                    "options": [
+                        [
+                            "a) Increased brain size",
+                            "b) Enhanced olfactory senses",
+                            "c) Longer limbs",
+                            "d) Stronger jaw structure"
+                        ],
+                        [
+                            "a) Improved agility in climbing trees",
+                            "b) Enhanced swimming capabilities",
+                            "c) Adaptation to both walking on land and tool use",
+                            "d) Increased speed in open fields"
+                        ],
+                        [
+                            "a) Taller stature for intimidation",
+                            "b) Reduced body weight for faster movement",
+                            "c) Adaptation for specific dietary preferences",
+                            "d) Varied body size for diverse ecological niches"
+                        ]
+                    ],
+                    "correctAnswers": [
+                        1, 3, 4
+                    ]
+                }
+            },
+            {
+                "title": "Житло та середовище",
+                "content": [
+                    {
+                        "type": "title",
+                        "text": "Living Conditions"
+                    },
+                    {
+                        "text": "Homo Habilis inhabited specific regions of Africa during the early Pleistocene. The conditions of their living were characterized by a variable climate and diverse landscapes. Climatic changes significantly impacted resource availability."
+                    },
+                    {
+                        "type": "title",
+                        "text": "Environment"
+                    },
+                    {
+                        "text": "The environment in which Homo Habilis lived was diverse, encountering various plant and animal species. Each presented unique challenges and opportunities, requiring adaptation to different surroundings. Adaptation to diverse environments was crucial for their survival."
+                    },
+                    {
+                        "type": "title",
+                        "text": "Housing"
+                    },
+                    {
+                        "text": "Unlike modern humans, Homo Habilis did not construct permanent structures. Instead, they sought refuge in natural formations such as caves and rock overhangs. These locations provided protection from harsh weather conditions and potential threats from predators."
+                    },
+                    {
+                        "type": "title",
+                        "text": "Diet"
+                    },
+                    {
+                        "text": "Homo Habilis had a varied diet, including fruits, vegetables, nuts, and roots gathered from the surrounding environment. Additionally, they engaged in hunting and gathering meat, demonstrating early signs of cooperation and tool usage."
+                    },
+                    {
+                        "type": "title",
+                        "text": "Natural Enemies"
+                    },
+                    {
+                        "text": "Despite their tool-making skills and adaptability, Homo Habilis faced threats from natural predators. Large carnivores such as big cats and hyenas posed risks to their safety, emphasizing the importance of communal living and defensive strategies."
+                    },
+                    {
+                        "text": "Understanding the living conditions of Homo Habilis provides valuable insights into the challenges they encountered and the strategies they employed for survival and adaptation."
+                    }
+                ],
+                "subArticleTest": {
+                    "questions": [
+                        "How did the diverse environment inhabited by Homo Habilis influence their daily activities, movement patterns, and adaptation strategies?",
+                        "In what ways did the variable climate impact the availability of resources for Homo Habilis, and how did they navigate these challenges?",
+                        "Considering their omnivorous diet and tool-making abilities, what were the key factors influencing the dietary choices and cooperative behaviors of Homo Habilis in their quest for sustenance?"
+                    ],
+                    "options": [
+                        [
+                            "a) Altered social structure",
+                            "b) Enhanced vision capabilities",
+                            "c) Improved tool-making skills",
+                            "d) Reduced need for adaptation"
+                        ],
+                        [
+                            "a) Creation of climate-controlled shelters",
+                            "b) Nomadic lifestyle and resource tracking",
+                            "c) Dependence on a single food source",
+                            "d) Hibernation-like behavior"
+                        ],
+                        [
+                            "a) Increased reliance on hunting",
+                            "b) Limited dietary choices and preferences",
+                            "c) Enhanced cooperation within social groups",
+                            "d) Decreased tool-making activities"
+                        ]
+                    ],
+                    "correctAnswers": [
+                        1, 2, 3
+                    ]
+                }
+            },
+            {
+                "title": "Tools and Technologies",
+                "content": [
+                    {
+                        "text": "Homo Habilis, living approximately 2.4 to 1.4 million years ago, represents a crucial period in the development of human civilization. Its distinctiveness from earlier human species is evident not only in physical characteristics but also in the inventions and technologies it developed."
+                    },
+                    {
+                        "type": "title",
+                        "text": "Tools of Homo Habilis: Key to Survival"
+                    },
+                    {
+                        "text": "Homo Habilis showcased a high level of intellect, manifested in its ability to create and use tools. The primary material for crafting tools was stone. They also utilized wooden or bone tools, although these did not preserve as well as stone tools."
+                    },
+                    {
+                        "type": "title",
+                        "text": "History of Discoveries"
+                    },
+                    {
+                        "text": "Several significant archaeological findings shed light on how Homo Habilis used tools. One of the most impressive is the discoveries in the Olduvai Gorge in Tanzania, where a multitude of stone tools were uncovered. Among them were various types of blades and scrapers, indicating a high level of inventiveness."
+                    },
+                    {
+                        "type": "title",
+                        "text": "Difference from Previous Humans"
+                    },
+                    {
+                        "text": "One of the first notable differences in Homo Habilis' tools compared to earlier species like Australopithecus was their complexity. Homo Habilis crafted tools with multiple functions, such as processing both meat and plants, indicating a high level of working memory and strategic thinking."
+                    },
+                    {
+                        "type": "title",
+                        "text": "Technological Ingenuity"
+                    },
+                    {
+                        "text": "Tool-Making Process\n\nHomo Habilis employed simple yet effective methods for crafting tools. They used large stones to produce flakes, which were then fashioned into various shapes. This required not only physical dexterity but also an understanding of material properties and their possibilities."
+                    },
+                    {
+                        "type": "title",
+                        "text": "Application of Tools"
+                    },
+                    {
+                        "text": "Tools of Homo Habilis were used to facilitate hunting, butchering meat, processing plants, and various daily tasks. They were a crucial element in survival strategies and ensuring necessary resources for the community."
+                    },
+                    {
+                        "type": "title",
+                        "text": "Conclusion"
+                    },
+                    {
+                        "text": "The tools and technologies of Homo Habilis reflect not only a high level of intellect but also an evolutionary leap in implementing technical solutions to ease daily life. These inventions not only provided them with an advantage in the struggle for survival but also defined a new stage in human development."
+                    }
+                ],
+                "subArticleTest": {
+                    "questions": [
+                        "How did Homo Habilis employ tools in their daily lives?",
+                        "What distinguished Homo Habilis' tools from those of earlier human species?",
+                        "Why are the discoveries in the Olduvai Gorge crucial in understanding Homo Habilis' technology?"
+                    ],
+                    "options": [
+                        [
+                            "a) Decorative purposes",
+                            "b) Social communication",
+                            "c) Cooking food",
+                            "d) Hunting and gathering"
+                        ],
+                        [
+                            "a) Simplicity and rudimentary design",
+                            "b) Single-purpose functionality",
+                            "c) Complexity with multiple functions",
+                            "d) Exclusive use of bone materials"
+                        ],
+                        [
+                            "a) Evidence of advanced artistic abilities",
+                            "b) Exclusive use of bone tools",
+                            "c) Lack of technological innovation",
+                            "d) Showcase of a variety of stone tools, indicating high inventiveness"
+                        ]
+                    ],
+                    "correctAnswers": [
+                        4, 3, 4
+                    ]
+                }
+            }
+        ]
+    }
+    ,
+    {
+        "date": "1,2 мільйона років до н.е.",
+        "text": "З'явлення Homo Erectus"
+    },
+    {
+        "date": "300 000 років до н.е.",
+        "text": "Прихід Homo Neanderthalensis в Європу, включаючи частини сучасної України."
+    },
+    {
+        "date": "200 000 років до н.е.",
+        "text": "Поява анатомічно сучасної Homo Sapiens."
+    },
+    {
+        "date": "10 000 років до н.е.",
+        "text": "Розвиток сільського господарства на Родючому півмісяці, що позначив Неолітичну революцію."
+    },
+    {
+        "date": "3 500 років до н.е.",
+        "text": "Зростання сумерської цивілізації в Месопотамії."
+    },
+    {
+        "date": "3 100 років до н.е.",
+        "text": "Початок єгипетської цивілізації вздовж Нілу."
+    },
+    {
+        "date": "2 000 років до н.е.",
+        "text": "Розквіт Індської цивілізації в індійському півострові."
+    },
+    {
+        "date": "1 700 років до н.е.",
+        "text": "Міноанська цивілізація на острові Крит."
+    },
+    {
+        "date": "1 200 років до н.е.",
+        "text": "Мікенська Греція."
+    },
+    {
+        "date": "753 року до н.е.",
+        "text": "Традиційна дата заснування Риму."
+    },
+    {
+
+        "date": "550 років до н.е.",
+        "text": "Ахеменідська перська імперія."
+    },
+    {
+
+        "date": "509 року до н.е.",
+        "text": "Утворення Римської Республіки."
+    },
+    {
+
+        "date": "484 року до н.е.",
+        "text": "Народження Сіддартхи Гаутами (Будди)."
+    },
+    {
+
+        "date": "323 року до н.е.",
+        "text": "Смерть Олександра Великого призводить до епохи Геленізму."
+    },
+    {
+
+        "date": "221 року до н.е.",
+        "text": "Династія Цінь об'єднує Китай."
+    },
+    {
+
+        "date": "206 років до н.е.",
+        "text": "Ганська династія в Китаї."
+    },
+    {
+
+        "date": "146 років до н.е.",
+        "text": "Завоювання Римом Картагини."
+    },
+    {
+
+        "date": "44 року до н.е.",
+        "text": "Вбивство Юлія Цезаря."
+    },
+    {
+
+        "date": "1-й століття н.е.",
+        "text": "Життя Ісуса з Назарету."
+    },
+    {
+
+        "date": "70 року н.е.",
+        "text": "Знищення Другого Храму в Єрусалимі."
+    },
+    {
+
+        "date": "117 року н.е.",
+        "text": "Розквіт Римської імперії за правління Траяна."
+    },
+    {
+
+        "date": "3-тє століття н.е.",
+        "text": "Криза Третьої імперії Риму."
+    },
+    {
+
+        "date": "220 року н.е.",
+        "text": "Цао Вей, одне з Трьох королівств в Китаї."
+    },
+    {
+
+        "date": "224 року н.е.",
+        "text": "Заснування Сасанідської імперії в Персії."
+    },
+    {
+
+        "date": "250 року н.е.",
+        "text": "Розквіт Гуптської імперії в Індії."
+    },
+    {
+
+        "date": "286 року н.е.",
+        "text": "Діоклетіан розділяє Римську імперію."
+    },
+    {
+
+        "date": "330 року н.е.",
+        "text": "Візантія (Константинополь) стає столицею Східної Римської імперії."
+    },
+    {
+
+        "date": "375 року н.е.",
+        "text": "Налет гунів на Європу, що впливає на різні нації."
+    },
+    {
+
+        "date": "375 року н.е.",
+        "text": "Готи перетинають річку Дунай і входять до Східної Римської імперії."
+    },
+    {
+
+        "date": "4-те століття до н.е.",
+        "text": "Скіфська культура на території сучасної України."
+    },
+    {
+
+        "date": "6-те століття до н.е.",
+        "text": "Заснування грецьких міст-колоній в регіоні Північного Причорномор'я, включаючи Ольвію та Херсонес Таврійський, які стали важливими центрами грецької культури на території сучасної України."
+    },
+    {
+
+        "date": "Test",
+        "text": "tttttt"
+    }
+]
