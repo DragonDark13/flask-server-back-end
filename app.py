@@ -1,5 +1,6 @@
 import peewee
 from flask import Flask, render_template, redirect, url_for, request, flash
+from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity, create_access_token, create_refresh_token
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from config import DATABASE
 from models import Event, MainArticleTest, Subtopic, SubArticleTest, Content, User
@@ -13,14 +14,17 @@ from flask_bcrypt import Bcrypt  # Імпорт Flask-Bcrypt
 from flask_cors import CORS
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'
-bcrypt = Bcrypt(app)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
-DATABASE.connect()
+# Конфігурація
+app.config['SECRET_KEY'] = 'your_secret_key'
+app.config['JWT_SECRET_KEY'] = 'your_jwt_secret_key'
 
+# Ініціалізація
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+jwt = JWTManager(app)
+bcrypt = Bcrypt(app)
 
 
 def create_tables():
@@ -194,44 +198,53 @@ def register():
             flash('Email already exists.')
 
 
+@app.route('/refresh', methods=['POST'])
+@jwt_required(refresh=True)
+def refresh():
+    current_user = get_jwt_identity()
+    new_access_token = create_access_token(identity=current_user)
+    return jsonify({'access_token': new_access_token}), 200
+
+
 @app.route('/login', methods=['POST'])
 def login():
-    data = request.json
-    email = data.get('email')
-    password = data.get('password')
+    email = request.json.get('email')
+    password = request.json.get('password')
 
     try:
         user = User.get(User.email == email)
         if bcrypt.check_password_hash(user.password, password):
-            # Згенеруйте токен
-            token = 'your_generated_token_here'
-
-            # Зберігайте додаткові дані користувача, які вам потрібні
-            user_data = {
-                'id': user.id,
-                'email': user.email,
-                'name': user.password,
-                'current_level': user.current_level,
-                'additional_tests_completed': user.additional_tests_completed
-            }
-
-            # Відповідь з токеном, даними користувача та статусом
+            access_token = create_access_token(identity=user.id)
+            refresh_token = create_refresh_token(identity=user.id)
             return jsonify({
                 'success': True,
-                'token': token,
-                'user_data': user_data,
-                'message': 'Login successful'
+                'token': access_token,
+                "refresh_token": refresh_token,
+                'user_data': {
+                    'email': user.email,
+                    'current_level': user.current_level,
+                    'additional_tests_completed': user.additional_tests_completed
+                }
             })
         else:
-            return jsonify({
-                'success': False,
-                'message': 'Invalid email or password'
-            }), 401
+            return jsonify({'success': False, 'message': 'Invalid email or password'}), 401
     except User.DoesNotExist:
-        return jsonify({
-            'success': False,
-            'message': 'Invalid email or password'
-        }), 401
+        return jsonify({'success': False, 'message': 'Invalid email or password'}), 401
+
+
+@app.route('/api/user', methods=['GET'])
+@jwt_required()
+def get_user_data():
+    user_id = get_jwt_identity()
+    user = User.get(User.id == user_id)
+
+    user_data = {
+        'email': user.email,
+        'current_level': user.current_level,
+        'additional_tests_completed': user.additional_tests_completed
+    }
+
+    return jsonify({'success': True, 'user_data': user_data})
 
 
 @app.route('/update_user', methods=['POST'])
