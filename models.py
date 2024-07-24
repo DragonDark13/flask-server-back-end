@@ -1,5 +1,8 @@
+from datetime import datetime
+
 from flask_login import UserMixin
-from peewee import Model, CharField, AutoField, TextField, ForeignKeyField, IntegerField
+from peewee import Model, CharField, AutoField, TextField, ForeignKeyField, IntegerField, DateTimeField, SQL, \
+    BooleanField
 from config import DATABASE
 import json
 
@@ -34,6 +37,12 @@ class Subtopic(BaseModel):
     content = TextField()  # Зберігає JSON дані
 
 
+class Test(BaseModel):
+    title = CharField()  # Назва тесту або підтесту
+    test_type = CharField()  # Тип тесту (Main Article або Sub Article)
+    event = ForeignKeyField(Event, backref='tests')
+
+
 class SubArticleTest(BaseModel):
     subtopic = ForeignKeyField(Subtopic, backref='sub_article_tests')
     question = TextField()
@@ -44,5 +53,23 @@ class SubArticleTest(BaseModel):
 class User(BaseModel, UserMixin):
     email = CharField(unique=True)
     password = CharField()
+    user_name = CharField(null=True)
     current_level = IntegerField(default=0)  # Додано нове поле для рівня проходження
     additional_tests_completed = IntegerField(default=0)  # Додано нове поле для кількості додаткових тестів
+
+
+class UserTestCompletion(BaseModel):
+    user = ForeignKeyField(User, backref='test_completions')
+    user_name = CharField(null=True)
+    test = ForeignKeyField(Test, backref='test_completions', null=True)
+    test_title = CharField(null=True)
+    completed = BooleanField(default=False)
+    date_completed = DateTimeField(default=datetime.now)
+
+
+class UserResult(BaseModel):
+    user = ForeignKeyField(User, backref='results')
+    main_article_test = ForeignKeyField(MainArticleTest, backref='user_results', null=True)
+    sub_article_test = ForeignKeyField(SubArticleTest, backref='user_results', null=True)
+    score = IntegerField()
+    date_taken = DateTimeField(default=datetime.now)  # Зберігає дату та час проходження тесту

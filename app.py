@@ -1,9 +1,11 @@
+from datetime import datetime
+
 import peewee
 from flask import Flask, render_template, redirect, url_for, request, flash
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity, create_access_token, create_refresh_token
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from config import DATABASE
-from models import Event, MainArticleTest, Subtopic, SubArticleTest, Content, User
+from models import Event, MainArticleTest, Subtopic, SubArticleTest, Content, User, UserResult, Test, UserTestCompletion
 import json
 from data import events_data
 from peewee import IntegrityError
@@ -29,7 +31,9 @@ bcrypt = Bcrypt(app)
 
 def create_tables():
     with DATABASE:
-        DATABASE.create_tables([User, Event, MainArticleTest, Subtopic, SubArticleTest, Content], safe=True)
+        DATABASE.create_tables(
+            [User, Event, MainArticleTest, Subtopic, SubArticleTest, Content, UserResult, Test, UserTestCompletion],
+            safe=True)
 
 
 create_tables()
@@ -53,6 +57,12 @@ with DATABASE.atomic():
 
     # Видалити всі Event
     Event.delete().execute()
+
+    Test.delete().execute()
+
+    UserResult.delete().execute()
+
+
 
     # Друга частина: Додавання нових записів
 
@@ -168,6 +178,106 @@ def get_events():
     return jsonify(results)
 
 
+# # Припустимо, що у вас вже є екземпляри відповідних моделей
+# user_instance = User.get(User.id == 1)  # Замість 1 використовуйте реальний ID користувача
+# event_instance = Event.get(Event.id == 1)  # Замість 1 використовуйте реальний ID події
+# subtopic_instance = Subtopic.get(Subtopic.id == 1)  # Замість 1 використовуйте реальний ID підрозділу
+# main_article_test_instance = MainArticleTest.get(
+#     MainArticleTest.id == 1)  # Замість 1 використовуйте реальний ID основного тесту
+# sub_article_test_instance = SubArticleTest.get(
+#     SubArticleTest.id == 1)  # Замість 1 використовуйте реальний ID підстатті тесту
+#
+# # Створення нового результату тесту
+# user_result = UserResult.create(
+#     user=user_instance,
+#     event=event_instance,
+#     subtopic=subtopic_instance,
+#     main_article_test=main_article_test_instance,
+#     sub_article_test=sub_article_test_instance,
+#     score=85  # Оцінка
+# )
+
+def add_main_article_tests():
+    for event in Event.select():
+        # Перевірити, чи існує основний тест для цього event
+        existing_tests = MainArticleTest.select().where(MainArticleTest.event == event)
+        if existing_tests:
+            Test.create(
+                title=event.text,
+                test_type='Main Article',
+                event=event
+            )
+
+
+add_main_article_tests()
+
+
+def add_sub_article_tests():
+    for subtopic in Subtopic.select():
+        # Перевірити, чи існують підтести для цього subtopic
+        existing_tests = SubArticleTest.select().where(SubArticleTest.subtopic == subtopic)
+        if existing_tests:
+            Test.create(
+                title=subtopic.title,
+                test_type='Sub Article',
+                event=subtopic.event  # Потрібно встановити подію через Subtopic
+            )
+
+
+add_sub_article_tests()
+
+
+def add_user_test_completions():
+    # Отримати всіх користувачів
+    users = User.select()
+
+    # Отримати всі тести
+    tests = Test.select()
+
+    # Створити записи в таблиці UserTestCompletion
+    with DATABASE.atomic():
+        for user in users:
+            for test in tests:
+                # Перевірити, чи вже існує запис для цієї комбінації
+                exists = UserTestCompletion.select().where(
+                    UserTestCompletion.user == user,
+                    UserTestCompletion.test == test
+                ).exists()
+
+                if not exists:
+                    UserTestCompletion.create(
+                        user=user,
+                        user_name = user.user_name,
+                        test_title=test.title,
+                        event=test.event,  # Потрібно встановити подію через T
+                        test=test,
+                        completed=False,  # За замовчуванням встановлено False
+                        date_completed=datetime.now()
+                    )
+
+
+add_user_test_completions()
+
+
+def save_user_result(user_id, test_type, test_id, score):
+    user = User.get(User.id == user_id)
+
+    if test_type == 'main':
+        test = MainArticleTest.get(MainArticleTest.id == test_id)
+        UserResult.create(
+            user=user,
+            main_article_test=test,
+            score=score
+        )
+    elif test_type == 'sub':
+        test = SubArticleTest.get(SubArticleTest.id == test_id)
+        UserResult.create(
+            user=user,
+            sub_article_test=test,
+            score=score
+        )
+
+
 @app.before_request
 def before_request():
     DATABASE.connect()
@@ -210,6 +320,7 @@ def refresh():
 def login():
     email = request.json.get('email')
     password = request.json.get('password')
+    user_name = request.json.get('user_name')
 
     try:
         user = User.get(User.email == email)
@@ -221,6 +332,7 @@ def login():
                 'token': access_token,
                 "refresh_token": refresh_token,
                 'user_data': {
+                    'user_name': user.user_name,
                     'email': user.email,
                     'current_level': user.current_level,
                     'additional_tests_completed': user.additional_tests_completed
