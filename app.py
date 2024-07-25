@@ -123,28 +123,34 @@ with DATABASE.atomic():
 
 
 # Перевірка даних
-@app.route('/get-events')
 def get_events():
     results = []
+
+    # Обробка кожної події в базі даних
     for event in Event.select():
-        # Отримання main_article_tests для кожного event
+        # Отримання основних тестів для кожної події
         main_article_tests = MainArticleTest.select().where(MainArticleTest.event == event)
         main_article_tests_data = []
+
         for mat in main_article_tests:
             main_article_tests_data.append({
+                'id': mat.id,  # Додаємо ID тесту
                 'question': mat.question,
                 'options': json.loads(mat.options),
                 'correct_answers': json.loads(mat.correct_answers)
             })
 
-        # Отримання subtopics для кожного event
+        # Отримання підтестів для кожної події
         subtopics = Subtopic.select().where(Subtopic.event == event)
         subtopics_data = []
+
         for subtopic in subtopics:
             sub_article_tests = SubArticleTest.select().where(SubArticleTest.subtopic == subtopic)
             sub_article_tests_data = []
+
             for sat in sub_article_tests:
                 sub_article_tests_data.append({
+                    'id': sat.id,  # Додаємо ID підтесту
                     'question': sat.question,
                     'options': json.loads(sat.options),
                     'correct_answers': json.loads(sat.correct_answers)
@@ -156,9 +162,10 @@ def get_events():
                 'sub_article_tests': sub_article_tests_data
             })
 
-        # Отримання content для кожного event
+        # Отримання вмісту для кожної події
         content_items = Content.select().where(Content.event == event)
         content_data = []
+
         for content_item in content_items:
             content_data.append({
                 'type': content_item.type,
@@ -167,6 +174,7 @@ def get_events():
 
         # Формування результатів
         results.append({
+            'id': event.id,  # Додаємо ID події
             'date': event.date,
             'text': event.text,
             'achieved': event.achieved,
@@ -257,6 +265,35 @@ def add_user_test_completions():
 
 
 add_user_test_completions()
+
+from flask import request, jsonify
+
+
+@app.route('/complete-test', methods=['POST'])
+def complete_test():
+    data = request.json
+    user_id = data.get('user_id')
+    test_id = data.get('test_id')
+    completed = data.get('completed', False)
+
+    if not user_id or not test_id:
+        return jsonify({'error': 'User ID and Test ID are required'}), 400
+
+    user = User.get_or_none(User.id == user_id)
+    test = Test.get_or_none(Test.id == test_id)
+
+    if not user or not test:
+        return jsonify({'error': 'Invalid User ID or Test ID'}), 404
+
+    # Запис виконання тесту
+    UserTestCompletion.create(
+        user=user,
+        test=test,
+        completed=completed,
+        date_completed=datetime.now()
+    )
+
+    return jsonify({'success': True}), 200
 
 
 def save_user_result(user_id, test_type, test_id, score):
