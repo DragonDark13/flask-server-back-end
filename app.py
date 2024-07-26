@@ -11,6 +11,7 @@ from peewee import IntegrityError
 from flask import Flask, request, jsonify
 from flask_bcrypt import Bcrypt  # Імпорт Flask-Bcrypt
 from flask_cors import CORS
+from werkzeug.security import check_password_hash
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -401,12 +402,79 @@ def get_user_data():
     user = User.get(User.id == user_id)
 
     user_data = {
+        'user_name': user.user_name,
         'email': user.email,
         'current_level': user.current_level,
         'additional_tests_completed': user.additional_tests_completed
     }
 
     return jsonify({'success': True, 'user_data': user_data})
+
+
+@app.route('/change-password', methods=['POST'])
+@jwt_required()
+def change_password():
+    data = request.get_json()
+    current_password = data.get('currentPassword')
+    new_password = data.get('newPassword')
+
+    user_id = get_jwt_identity()
+    user = User.get(User.id == user_id)
+
+    if not bcrypt.check_password_hash(user.password, current_password):
+        return jsonify({'message': 'Current password is incorrect'}), 400
+
+    hashed_new_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
+    user.password = hashed_new_password
+    user.save()
+
+    return jsonify({'message': 'Password changed successfully'}), 200
+
+
+@app.route('/update-profile', methods=['POST'])
+@jwt_required()
+def update_profile():
+    data = request.get_json()
+    user_id = get_jwt_identity()
+    user = User.get(User.id == user_id)
+
+    new_user_name = data.get('user_name')
+    new_email = data.get('email')
+    new_country = data.get('country')
+
+    # Перевірка наявності користувача з таким самим user_name
+    if User.select().where((User.user_name == new_user_name) & (User.id != user_id)).exists():
+        return jsonify({'message': 'User name already exists.'}), 400
+
+    if User.select().where((User.email == new_email) & (User.id != user_id)).exists():
+        return jsonify({'message': 'Email already exists.'}), 400
+
+    user.user_name = new_user_name
+    user.email = new_email
+    user.country = new_country  # Припустимо, що у вас є поле country у вашій моделі User
+    user.save()
+
+    return jsonify({'message': 'Profile updated successfully.'}), 200
+
+
+@app.route('/delete-profile', methods=['DELETE'])
+@jwt_required()
+def delete_profile():
+    user_id = get_jwt_identity()
+    try:
+        user = User.get(User.id == user_id)
+    except User.DoesNotExist:
+        return jsonify({'message': 'User not found'}), 404
+
+    try:
+        user.delete_instance()
+        return jsonify({'message': 'Profile deleted successfully'}), 200
+    except Exception as e:
+        return jsonify({'message': 'Failed to delete profile', 'error': str(e)}), 500
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
 
 
 @app.route('/update_user', methods=['POST'])

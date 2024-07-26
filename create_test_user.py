@@ -34,7 +34,7 @@ def create_test_user():
 #     score=85
 # )
 
-user2 = User.create(user_name='Test User2', email='user2@example.com', password='password456')
+# user2 = User.create(user_name='Test User2', email='user2@example.com', password='password456')
 
 if __name__ == '__main__':
     create_test_user()
