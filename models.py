@@ -66,6 +66,8 @@ class UserTestCompletion(BaseModel):
     test_title = CharField(null=True)
     completed = BooleanField(default=False)
     date_completed = DateTimeField(default=datetime.now)
+    test_type = CharField()  # Додаємо нове поле для типу тесту
+
 
 
 class UserResult(BaseModel):
