@@ -1,7 +1,5 @@
 from datetime import datetime
 
-import peewee
-from flask import Flask, render_template, redirect, url_for, request, flash
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity, create_access_token, create_refresh_token
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from config import DATABASE
@@ -9,7 +7,6 @@ from models import Event, MainArticleTest, Subtopic, SubArticleTest, Content, Us
 import json
 from data import events_data
 from peewee import IntegrityError
-from flask_bcrypt import Bcrypt
 
 from flask import Flask, request, jsonify
 from flask_bcrypt import Bcrypt  # Імпорт Flask-Bcrypt
@@ -61,8 +58,6 @@ with DATABASE.atomic():
     Test.delete().execute()
 
     UserResult.delete().execute()
-
-
 
     # Друга частина: Додавання нових записів
 
@@ -123,6 +118,7 @@ with DATABASE.atomic():
 
 
 # Перевірка даних
+@app.route('/get-events')
 def get_events():
     results = []
 
@@ -255,7 +251,7 @@ def add_user_test_completions():
                 if not exists:
                     UserTestCompletion.create(
                         user=user,
-                        user_name = user.user_name,
+                        user_name=user.user_name,
                         test_title=test.title,
                         event=test.event,  # Потрібно встановити подію через T
                         test=test,
@@ -265,8 +261,6 @@ def add_user_test_completions():
 
 
 add_user_test_completions()
-
-from flask import request, jsonify
 
 
 @app.route('/complete-test', methods=['POST'])
@@ -331,18 +325,37 @@ def load_user(user_id):
     return User.get(User.id == user_id)
 
 
-@app.route('/register', methods=['GET', 'POST'])
+@app.route('/register', methods=['POST'])
 def register():
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
-        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-        try:
-            user = User.create(email=email, password=hashed_password)
-            login_user(user)
-            return redirect(url_for('index'))
-        except IntegrityError:
-            flash('Email already exists.')
+    data = request.get_json()  # Отримуємо дані у форматі JSON
+    email = data.get('email')
+    password = data.get('password')
+    user_name = data.get('userName')
+
+    # Перевірка наявності користувача з таким самим user_name
+    if User.select().where(User.user_name == user_name).exists():
+        return jsonify({'message': 'User name already exists.'}), 400
+
+    hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+
+    try:
+        user = User.create(email=email, password=hashed_password, user_name=user_name)
+        login_user(user)
+        access_token = create_access_token(identity=user.id)
+        refresh_token = create_refresh_token(identity=user.id)
+        return jsonify({
+            'message': 'User registered successfully.',
+            'token': access_token,
+            'refresh_token': refresh_token,
+            'user_data': {
+                'user_name': user.user_name,
+                'email': user.email,
+                'current_level': user.current_level,
+                'additional_tests_completed': user.additional_tests_completed
+            }
+        }), 201
+    except IntegrityError:
+        return jsonify({'message': 'Email already exists.'}), 400
 
 
 @app.route('/refresh', methods=['POST'])
@@ -421,23 +434,24 @@ def update_user():
     return jsonify({'message': 'User updated successfully', 'user': user_data}), 200
 
 
-@app.route('/complete_test', methods=['POST'])
-@login_required
-def complete_test():
-    user_id = current_user.id
-    data = request.json
-    additional_tests_completed = data.get('additional_tests_completed', 1)
-
-    user = User.get(User.id == user_id)
-    user.additional_tests_completed += additional_tests_completed
-    user.save()
-
-    return jsonify({'message': 'Test completed and user updated'}), 200
-
-
-@app.route('/')
-def index():
-    return f'Hello, {current_user.username}!'
+#
+# @app.route('/complete_test', methods=['POST'])
+# @login_required
+# def complete_test():
+#     user_id = current_user.id
+#     data = request.json
+#     additional_tests_completed = data.get('additional_tests_completed', 1)
+#
+#     user = User.get(User.id == user_id)
+#     user.additional_tests_completed += additional_tests_completed
+#     user.save()
+#
+#     return jsonify({'message': 'Test completed and user updated'}), 200
+#
+#
+# @app.route('/')
+# def index():
+#     return f'Hello, {current_user.username}!'
 
 
 if __name__ == '__main__':
