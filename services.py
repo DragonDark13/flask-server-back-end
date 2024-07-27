@@ -10,33 +10,112 @@ import logging
 bcrypt = Bcrypt()
 
 
+def get_test_id_for_event(event):
+    # Отримати ідентифікатор тесту для основних тестів
+    test = Test.select().where(Test.event == event, Test.test_type == 'Main Article').first()
+    return test.id if test else None
+
+
+def get_test_id_for_subtopic(subtopic):
+    # Отримати ідентифікатор тесту для підтем
+    test = Test.select().where(Test.event == subtopic.event, Test.test_type == 'Sub Article').first()
+    return test.id if test else None
+
+
+def get_sub_article_tests(subtopic):
+    # Отримати всі тести для підтем
+    sub_article_test_questions = SubArticleTest.select().where(SubArticleTest.subtopic == subtopic)
+    sub_article_tests_data = [{
+        'id': test.id,  # Ідентифікатор питання
+        'question': test.question,
+        'options': json.loads(test.options),
+        'correct_answers': json.loads(test.correct_answers)
+    } for test in sub_article_test_questions]
+
+    return sub_article_tests_data
+
+
+def get_main_article_test_questions(event):
+    # Отримати всі тести для події
+    main_article_test_questions = MainArticleTest.select().where(MainArticleTest.event == event)
+    main_article_test_questions_data = [{
+        'id': test.id,  # Ідентифікатор питання
+        'question': test.question,
+        'options': json.loads(test.options),
+        'correct_answers': json.loads(test.correct_answers),
+    } for test in main_article_test_questions]
+
+    return main_article_test_questions_data
+
+
 def get_events_service():
     results = []
     for event in Event.select():
-        main_article_tests = MainArticleTest.select().where(MainArticleTest.event == event)
-        main_article_tests_data = [{'id': mat.id, 'question': mat.question, 'options': json.loads(mat.options),
-                                    'correct_answers': json.loads(mat.correct_answers)} for mat in main_article_tests]
+        main_article_test_questions_data = get_main_article_test_questions(event)
 
-        subtopics = Subtopic.select().where(Subtopic.event == event)
         subtopics_data = []
-        for subtopic in subtopics:
-            sub_article_tests = SubArticleTest.select().where(SubArticleTest.subtopic == subtopic)
-            sub_article_tests_data = [{'id': sat.id, 'question': sat.question, 'options': json.loads(sat.options),
-                                       'correct_answers': json.loads(sat.correct_answers)} for sat in sub_article_tests]
-            subtopics_data.append({'title': subtopic.title, 'content': json.loads(subtopic.content),
-                                   'sub_article_tests': sub_article_tests_data})
+        for subtopic in Subtopic.select().where(Subtopic.event == event):
+            sub_article_tests_data = get_sub_article_tests(subtopic)
+            subtopics_data.append({
+                'id': subtopic.id,
+                'title': subtopic.title,
+                'content': json.loads(subtopic.content),
+                'sub_article_test_questions': sub_article_tests_data,
+                'sub_article_test_id': get_test_id_for_subtopic(subtopic)  # Ідентифікатор тесту для підтем
+            })
 
-        content_items = Content.select().where(Content.event == event)
-        content_data = [{'type': content_item.type, 'text': content_item.text} for content_item in content_items]
+            content_items = Content.select().where(Content.event == event)
+            content_data = []
 
-        results.append({'id': event.id,
-                        'date': event.date,
-                        'text': event.text,
-                        'achieved': event.achieved,
-                        'main_article_tests': main_article_tests_data,
-                        'subtopics': subtopics_data,
-                        'content': content_data})
+            for content_item in content_items:
+                content_data.append({
+                    'type': content_item.type,
+                    'text': content_item.text
+                })
+
+        results.append({
+            'id': event.id,
+            'date': event.date,
+            'text': event.text,
+            'achieved': event.achieved,
+            'main_article_test_questions': main_article_test_questions_data,
+            'main_article_test_id': get_test_id_for_event(event),  # Ідентифікатор тесту для основних тестів
+            'subtopics': subtopics_data,
+            'content': content_data
+            # Припускаючи, що є один контент для події
+        })
+
     return results
+
+
+def add_main_article_test_questions():
+    for event in Event.select():
+        # Перевірити, чи існує основний тест для цього event
+        existing_tests = MainArticleTest.select().where(MainArticleTest.event == event)
+        if existing_tests:
+            Test.create(
+                title=event.text,
+                test_type='Main Article',
+                event=event
+            )
+
+
+add_main_article_test_questions()
+
+
+def add_sub_article_tests():
+    for subtopic in Subtopic.select():
+        # Перевірити, чи існують підтести для цього subtopic
+        existing_tests = SubArticleTest.select().where(SubArticleTest.subtopic == subtopic)
+        if existing_tests:
+            Test.create(
+                title=subtopic.title,
+                test_type='Sub Article',
+                event=subtopic.event  # Потрібно встановити подію через Subtopic
+            )
+
+
+add_sub_article_tests()
 
 
 def complete_test_service(data):
@@ -67,13 +146,28 @@ def format_user_data(user, include_tests=False):
 
     if include_tests:
         user_tests = UserTestCompletion.select().where(UserTestCompletion.user_id == user.id)
-        user_tests_data = [{
-            'test_id': test.test.id,
-            'test_type': test.test_type,
-            'event_id': test.test.event.id if test.test.event else None,
-            'parent_article_title': test.test_title,
-            'completed': test.completed
-        } for test in user_tests]
+        user_tests_data = []
+        for user_test in user_tests:
+            try:
+                test = user_test.test  # Отримати тест
+                user_tests_data.append({
+                    'test_id': test.id,
+                    'test_type': user_test.test_type,
+                    'event_id': test.event.id if test.event else None,
+                    'parent_article_title': user_test.test_title,
+                    'completed': user_test.completed
+                })
+            except Test.DoesNotExist:
+                # Логування помилки або будь-яка інша обробка
+                print(f'Test with id {user_test.test_id} does not exist.')
+                user_tests_data.append({
+                    'test_id': None,
+                    'test_type': user_test.test_type,
+                    'event_id': None,
+                    'parent_article_title': user_test.test_title,
+                    'completed': user_test.completed
+                })
+
         user_data['tests'] = user_tests_data
 
     return user_data

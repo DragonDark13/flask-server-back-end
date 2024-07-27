@@ -24,8 +24,14 @@ class Content(BaseModel):
     text = TextField()
 
 
+class Test(BaseModel):
+    title = CharField()  # Назва тесту або підтесту
+    test_type = CharField()  # Тип тесту (Main Article або Sub Article)
+    event = ForeignKeyField(Event, backref='tests')
+
+
 class MainArticleTest(BaseModel):
-    event = ForeignKeyField(Event, backref='main_article_tests')
+    event = ForeignKeyField(Event, backref='main_article_test_questions')
     question = TextField()
     options = TextField()  # Зберігає JSON дані
     correct_answers = TextField()  # Зберігає JSON дані
@@ -37,14 +43,8 @@ class Subtopic(BaseModel):
     content = TextField()  # Зберігає JSON дані
 
 
-class Test(BaseModel):
-    title = CharField()  # Назва тесту або підтесту
-    test_type = CharField()  # Тип тесту (Main Article або Sub Article)
-    event = ForeignKeyField(Event, backref='tests')
-
-
 class SubArticleTest(BaseModel):
-    subtopic = ForeignKeyField(Subtopic, backref='sub_article_tests')
+    subtopic = ForeignKeyField(Subtopic, backref='sub_article_test_questions')
     question = TextField()
     options = TextField()  # Зберігає JSON дані
     correct_answers = TextField()  # Зберігає JSON дані
@@ -67,7 +67,6 @@ class UserTestCompletion(BaseModel):
     completed = BooleanField(default=False)
     date_completed = DateTimeField(default=datetime.now)
     test_type = CharField()  # Додаємо нове поле для типу тесту
-
 
 
 class UserResult(BaseModel):
