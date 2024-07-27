@@ -1,11 +1,13 @@
+from flask_bcrypt import Bcrypt
+
 from models import User, Event, MainArticleTest, Subtopic, SubArticleTest, Content, UserResult, Test, UserTestCompletion
 from datetime import datetime
 from flask_jwt_extended import create_access_token, create_refresh_token
-from werkzeug.security import check_password_hash
 from peewee import IntegrityError
 import json
-from flask_bcrypt import Bcrypt
-from app import bcrypt
+import logging
+
+bcrypt = Bcrypt()
 
 
 def get_events_service():
@@ -27,8 +29,12 @@ def get_events_service():
         content_items = Content.select().where(Content.event == event)
         content_data = [{'type': content_item.type, 'text': content_item.text} for content_item in content_items]
 
-        results.append({'id': event.id, 'date': event.date, 'text': event.text, 'achieved': event.achieved,
-                        'main_article_tests': main_article_tests_data, 'subtopics': subtopics_data,
+        results.append({'id': event.id,
+                        'date': event.date,
+                        'text': event.text,
+                        'achieved': event.achieved,
+                        'main_article_tests': main_article_tests_data,
+                        'subtopics': subtopics_data,
                         'content': content_data})
     return results
 
@@ -51,6 +57,28 @@ def complete_test_service(data):
     return {'success': True}, 200
 
 
+def format_user_data(user, include_tests=False):
+    user_data = {
+        'user_name': user.user_name,
+        'email': user.email,
+        'current_level': user.current_level,
+        'additional_tests_completed': user.additional_tests_completed
+    }
+
+    if include_tests:
+        user_tests = UserTestCompletion.select().where(UserTestCompletion.user_id == user.id)
+        user_tests_data = [{
+            'test_id': test.test.id,
+            'test_type': test.test_type,
+            'event_id': test.test.event.id if test.test.event else None,
+            'parent_article_title': test.test_title,
+            'completed': test.completed
+        } for test in user_tests]
+        user_data['tests'] = user_tests_data
+
+    return user_data
+
+
 def register_user_service(data):
     email = data.get('email')
     password = data.get('password')
@@ -64,9 +92,13 @@ def register_user_service(data):
         user = User.create(email=email, password=hashed_password, user_name=user_name)
         access_token = create_access_token(identity=user.id)
         refresh_token = create_refresh_token(identity=user.id)
-        return {'message': 'User registered successfully.', 'token': access_token, 'refresh_token': refresh_token,
-                'user_data': {'user_name': user.user_name, 'email': user.email, 'current_level': user.current_level,
-                              'additional_tests_completed': user.additional_tests_completed}}, 201
+        user_data = format_user_data(user, include_tests=True)  # Включаємо тести
+        return {
+                   'message': 'User registered successfully.',
+                   'token': access_token,
+                   'refresh_token': refresh_token,
+                   'user_data': user_data
+               }, 201
     except IntegrityError:
         return {'message': 'Email already exists.'}, 400
 
@@ -75,17 +107,37 @@ def login_user_service(data):
     email = data.get('email')
     password = data.get('password')
     try:
+        logging.info(f"Attempting to log in user with email: {email}")
         user = User.get(User.email == email)
         if bcrypt.check_password_hash(user.password, password):
             access_token = create_access_token(identity=user.id)
             refresh_token = create_refresh_token(identity=user.id)
-            return {'success': True, 'token': access_token, "refresh_token": refresh_token,
-                    'user_data': {'user_name': user.user_name, 'email': user.email, 'current_level': user.current_level,
-                                  'additional_tests_completed': user.additional_tests_completed}}
+
+            user_data = format_user_data(user, include_tests=True)  # Включаємо тести
+
+            logging.info(f"User tests data: {user_data.get('tests')}")
+
+            return {
+                'success': True,
+                'token': access_token,
+                'refresh_token': refresh_token,
+                'user_data': user_data
+            }
         else:
+            logging.warning("Invalid email or password")
             return {'success': False, 'message': 'Invalid email or password'}, 401
     except User.DoesNotExist:
+        logging.error("User does not exist")
         return {'success': False, 'message': 'Invalid email or password'}, 401
+
+
+def get_user_data_service(user_id):
+    try:
+        user = User.get(User.id == user_id)
+        user_data = format_user_data(user, include_tests=True)  # Включаємо тести
+        return {'success': True, 'user_data': user_data}
+    except User.DoesNotExist:
+        return {'success': False, 'message': 'User not found'}
 
 
 def change_password_service(data, user_id):

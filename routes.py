@@ -10,8 +10,9 @@ from services import (
     update_profile_service,
     delete_profile_service,
     refresh_token_service,
-    update_user_service
+    update_user_service, get_user_data_service
 )
+
 
 def register_routes(app):
     @app.route('/get-events', methods=['GET'])
@@ -29,6 +30,13 @@ def register_routes(app):
     @app.route('/login', methods=['POST'])
     def login():
         return login_user_service(request.json)
+
+    @app.route('/api/user', methods=['GET'])
+    @jwt_required()
+    def get_user_data():
+        user_id = get_jwt_identity()
+        user_data = get_user_data_service(user_id)
+        return jsonify(user_data)
 
     @app.route('/change-password', methods=['POST'])
     @jwt_required()
