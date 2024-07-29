@@ -7,6 +7,7 @@ from models import MainArticleTest, User, Subtopic, UserTestCompletion, UserResu
 from routes import register_routes
 from data import events_data
 import json
+import datetime
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -143,6 +144,39 @@ def add_sub_article_test_questions():
 
 
 add_sub_article_test_questions()
+
+
+def add_user_test_completions():
+    # Отримати всіх користувачів
+    users = User.select()
+
+    # Отримати всі тести
+    tests = Test.select()
+
+    # Створити записи в таблиці UserTestCompletion
+    with DATABASE.atomic():
+        for user in users:
+            for test in tests:
+                # Перевірити, чи вже існує запис для цієї комбінації
+                exists = UserTestCompletion.select().where(
+                    UserTestCompletion.user == user,
+                    UserTestCompletion.test == test
+                ).exists()
+
+                if not exists:
+                    UserTestCompletion.create(
+                        user=user,
+                        user_name=user.user_name,
+                        test_title=test.title,
+                        event=test.event,  # Потрібно встановити подію через Test
+                        test=test,
+                        test_type=test.test_type,  # Додаємо поле test_type
+                        completed=False,  # За замовчуванням встановлено False
+                        date_completed=datetime.now()
+                    )
+
+
+add_user_test_completions()
 
 if __name__ == '__main__':
     app.run(debug=True)

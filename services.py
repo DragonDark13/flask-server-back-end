@@ -118,24 +118,6 @@ def add_sub_article_tests():
 add_sub_article_tests()
 
 
-def complete_test_service(data):
-    user_id = data.get('user_id')
-    test_id = data.get('test_id')
-    completed = data.get('completed', False)
-
-    if not user_id or not test_id:
-        return {'error': 'User ID and Test ID are required'}, 400
-
-    user = User.get_or_none(User.id == user_id)
-    test = Test.get_or_none(Test.id == test_id)
-
-    if not user or not test:
-        return {'error': 'Invalid User ID or Test ID'}, 404
-
-    UserTestCompletion.create(user=user, test=test, completed=completed, date_completed=datetime.now())
-    return {'success': True}, 200
-
-
 def format_user_data(user, include_tests=False):
     user_data = {
         'user_name': user.user_name,
@@ -168,7 +150,7 @@ def format_user_data(user, include_tests=False):
                     'completed': user_test.completed
                 })
 
-        user_data['tests'] = user_tests_data
+        user_data['tests_completed_list'] = user_tests_data
 
     return user_data
 
@@ -284,3 +266,45 @@ def update_user_service(data, current_user):
     user.user_name = user_name
     user.save()
     return {'success': True}, 200
+
+
+# Приклад функції для отримання user_id з токена (використовуйте свою логіку)
+def complete_test_service(user_id, data):
+    test_id = data.get('test_id')
+    completed = data.get('completed', False)
+
+    if not user_id or not test_id:
+        return {'error': 'User ID and Test ID are required'}, 400
+
+    user = User.get_or_none(User.id == user_id)
+    test = Test.get_or_none(Test.id == test_id)
+
+    if not user or not test:
+        return {'error': 'Invalid User ID or Test ID'}, 404
+
+    # Перевірити, чи вже існує запис для цієї комбінації
+    user_test_completion = UserTestCompletion.get_or_none(
+        UserTestCompletion.user == user,
+        UserTestCompletion.test == test
+    )
+
+    if user_test_completion:
+        # Оновити існуючий запис
+        user_test_completion.completed = completed
+        user_test_completion.date_completed = datetime.now()
+        user_test_completion.save()
+    else:
+        # Створити новий запис
+        UserTestCompletion.create(
+            user=user,
+            test=test,
+            completed=completed,
+            date_completed=datetime.now()
+        )
+
+    # Повернення даних користувача після завершення тесту
+    user_data = format_user_data(user, include_tests=True)
+    return {
+        'success': True,
+        'user_data': user_data
+    }

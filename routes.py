@@ -20,8 +20,10 @@ def register_routes(app):
         return jsonify(get_events_service())
 
     @app.route('/complete-test', methods=['POST'])
+    @jwt_required()
     def complete_test():
-        return complete_test_service(request.json)
+        user_id = get_jwt_identity()  # Отримати user_id з JWT токена
+        return jsonify(complete_test_service(user_id, request.json))
 
     @app.route('/register', methods=['POST'])
     def register():
