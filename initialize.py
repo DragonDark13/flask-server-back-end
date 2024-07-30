@@ -4,7 +4,16 @@ from models import MainArticleTest, User, Subtopic, UserTestCompletion, UserResu
     Counter
 from data import events_data
 import json
+from datetime import datetime
 
+
+def initialize_user_test_completions():
+    for user_test_completion in UserTestCompletion.select():
+        user = user_test_completion.user
+        test = user_test_completion.test
+        completed = user_test_completion.completed
+
+        update_user_test_completion(user, test, completed)
 
 
 def create_tables():
@@ -147,3 +156,12 @@ def add_user_test_completions():
                         completed=False,  # За замовчуванням встановлено False
                         date_completed=datetime.now()
                     )
+
+
+def update_user_test_completion(user, test, completed):
+    if completed:
+        if test.test_type == 'Main Article':
+            user.current_level += 1
+        elif test.test_type == 'Sub Article':
+            user.additional_tests_completed += 1
+        user.save()

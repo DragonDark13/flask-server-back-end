@@ -1,5 +1,6 @@
 from flask_bcrypt import Bcrypt
 
+from initialize import update_user_test_completion
 from models import User, Event, MainArticleTest, Subtopic, SubArticleTest, Content, UserResult, Test, UserTestCompletion
 from datetime import datetime
 from flask_jwt_extended import create_access_token, create_refresh_token
@@ -307,13 +308,7 @@ def complete_test_service(user_id, data):
         )
 
     # Оновлення поля current_level та additional_tests_completed
-    if completed:
-        if test.test_type == 'Main Article':
-            user.current_level += 1
-        elif test.test_type == 'Sub Article':
-            user.additional_tests_completed += 1
-
-        user.save()
+    update_user_test_completion(user, test, completed)
 
     # Повернення даних користувача після завершення тесту
     user_data = format_user_data(user, include_tests=True)
