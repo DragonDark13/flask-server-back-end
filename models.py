@@ -1,8 +1,7 @@
 from datetime import datetime
 
 from flask_login import UserMixin
-from peewee import Model, CharField, AutoField, TextField, ForeignKeyField, IntegerField, DateTimeField, SQL, \
-    BooleanField
+from peewee import Model, CharField, TextField, ForeignKeyField, DateTimeField, BooleanField, IntegerField
 from config import DATABASE
 import json
 
@@ -12,42 +11,61 @@ class BaseModel(Model):
         database = DATABASE
 
 
+class Counter(BaseModel):
+    name = CharField(primary_key=True)  # Ім'я лічильника
+    value = IntegerField(default=0)  # Поточне значення лічильника
+
+
+def get_next_id():
+    with DATABASE.atomic():
+        counter, created = Counter.get_or_create(name='global_counter', defaults={'value': 0})
+        counter.value += 1
+        counter.save()
+        return counter.value
+
+
 class Event(BaseModel):
+    # id_test = IntegerField(primary_key=True, default=get_next_id)
     date = CharField(null=True)
     text = TextField(null=True)
     achieved = TextField(null=True)
+    test_id = IntegerField(
+        default=get_next_id)  # Зберігає строку з порядковими номерами всіх тестів для події
 
 
 class Content(BaseModel):
     event = ForeignKeyField(Event, backref='contents')
-    type = CharField(null=True)  # Поле type не є обов'язковим
+    type = CharField(null=True)
     text = TextField()
 
 
 class Test(BaseModel):
-    title = CharField()  # Назва тесту або підтесту
-    test_type = CharField()  # Тип тесту (Main Article або Sub Article)
+    title = CharField()
+    test_type = CharField()
     event = ForeignKeyField(Event, backref='tests')
 
 
 class MainArticleTest(BaseModel):
     event = ForeignKeyField(Event, backref='main_article_test_questions')
     question = TextField()
-    options = TextField()  # Зберігає JSON дані
-    correct_answers = TextField()  # Зберігає JSON дані
+    options = TextField()
+    correct_answers = TextField()
 
 
 class Subtopic(BaseModel):
+    # id_test = IntegerField(primary_key=True, default=get_next_id)
     event = ForeignKeyField(Event, backref='subtopics')
     title = CharField()
     content = TextField()  # Зберігає JSON дані
+    test_id = IntegerField(
+        default=get_next_id)  # Зберігає строку з порядковими номерами всіх тестів для події
 
 
 class SubArticleTest(BaseModel):
     subtopic = ForeignKeyField(Subtopic, backref='sub_article_test_questions')
     question = TextField()
-    options = TextField()  # Зберігає JSON дані
-    correct_answers = TextField()  # Зберігає JSON дані
+    options = TextField()
+    correct_answers = TextField()
 
 
 class User(BaseModel, UserMixin):
@@ -59,19 +77,17 @@ class User(BaseModel, UserMixin):
     additional_tests_completed = IntegerField(default=0)  # Додано нове поле для кількості додаткових тестів
 
 
-class UserTestCompletion(BaseModel):
-    user = ForeignKeyField(User, backref='test_completions')
-    user_name = CharField(null=True)
-    test = ForeignKeyField(Test, backref='test_completions', null=True)
-    test_title = CharField(null=True)
-    completed = BooleanField(default=False)
-    date_completed = DateTimeField(default=datetime.now)
-    test_type = CharField()  # Додаємо нове поле для типу тесту
-
-
 class UserResult(BaseModel):
     user = ForeignKeyField(User, backref='results')
-    main_article_test = ForeignKeyField(MainArticleTest, backref='user_results', null=True)
-    sub_article_test = ForeignKeyField(SubArticleTest, backref='user_results', null=True)
-    score = IntegerField()
-    date_taken = DateTimeField(default=datetime.now)  # Зберігає дату та час проходження тесту
+    result = TextField()
+
+
+class UserTestCompletion(BaseModel):
+    user = ForeignKeyField(User, backref='test_completions')
+    user_name = CharField()
+    test_title = CharField()
+    event = ForeignKeyField(Event, backref='user_test_completions')
+    test = ForeignKeyField(Test, backref='user_test_completions')
+    test_type = CharField()
+    completed = BooleanField(default=False)
+    date_completed = DateTimeField(null=True)

@@ -61,7 +61,7 @@ def get_events_service():
                 'title': subtopic.title,
                 'content': json.loads(subtopic.content),
                 'sub_article_test_questions': sub_article_tests_data,
-                'sub_article_test_id': get_test_id_for_subtopic(subtopic)  # Ідентифікатор тесту для підтем
+                'sub_article_test_id': subtopic.test_id  # Ідентифікатор тесту для підтем
             })
 
             content_items = Content.select().where(Content.event == event)
@@ -79,7 +79,7 @@ def get_events_service():
             'text': event.text,
             'achieved': event.achieved,
             'main_article_test_questions': main_article_test_questions_data,
-            'main_article_test_id': get_test_id_for_event(event),  # Ідентифікатор тесту для основних тестів
+            'main_article_test_id': event.test_id,  # Ідентифікатор тесту для основних тестів
             'subtopics': subtopics_data,
             'content': content_data
             # Припускаючи, що є один контент для події
@@ -88,34 +88,35 @@ def get_events_service():
     return results
 
 
-def add_main_article_test_questions():
-    for event in Event.select():
-        # Перевірити, чи існує основний тест для цього event
-        existing_tests = MainArticleTest.select().where(MainArticleTest.event == event)
-        if existing_tests:
-            Test.create(
-                title=event.text,
-                test_type='Main Article',
-                event=event
-            )
-
-
-add_main_article_test_questions()
-
-
-def add_sub_article_tests():
-    for subtopic in Subtopic.select():
-        # Перевірити, чи існують підтести для цього subtopic
-        existing_tests = SubArticleTest.select().where(SubArticleTest.subtopic == subtopic)
-        if existing_tests:
-            Test.create(
-                title=subtopic.title,
-                test_type='Sub Article',
-                event=subtopic.event  # Потрібно встановити подію через Subtopic
-            )
-
-
-add_sub_article_tests()
+#
+# def add_main_article_test_questions():
+#     for event in Event.select():
+#         # Перевірити, чи існує основний тест для цього event
+#         existing_tests = MainArticleTest.select().where(MainArticleTest.event == event)
+#         if existing_tests:
+#             Test.create(
+#                 title=event.text,
+#                 test_type='Main Article',
+#                 event=event
+#             )
+#
+#
+# add_main_article_test_questions()
+#
+#
+# def add_sub_article_tests():
+#     for subtopic in Subtopic.select():
+#         # Перевірити, чи існують підтести для цього subtopic
+#         existing_tests = SubArticleTest.select().where(SubArticleTest.subtopic == subtopic)
+#         if existing_tests:
+#             Test.create(
+#                 title=subtopic.title,
+#                 test_type='Sub Article',
+#                 event=subtopic.event  # Потрібно встановити подію через Subtopic
+#             )
+#
+#
+# add_sub_article_tests()
 
 
 def format_user_data(user, include_tests=False):
@@ -298,9 +299,21 @@ def complete_test_service(user_id, data):
         UserTestCompletion.create(
             user=user,
             test=test,
+            test_title=test.title,
+            test_type=test.test_type,
+            event=test.event,
             completed=completed,
             date_completed=datetime.now()
         )
+
+    # Оновлення поля current_level та additional_tests_completed
+    if completed:
+        if test.test_type == 'Main Article':
+            user.current_level += 1
+        elif test.test_type == 'Sub Article':
+            user.additional_tests_completed += 1
+
+        user.save()
 
     # Повернення даних користувача після завершення тесту
     user_data = format_user_data(user, include_tests=True)
