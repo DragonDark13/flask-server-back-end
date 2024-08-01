@@ -1,4 +1,4 @@
-from app import DATABASE, User, save_user_result
+from app import DATABASE, User
 from flask_bcrypt import Bcrypt
 
 from models import UserResult, MainArticleTest
