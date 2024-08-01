@@ -89,37 +89,6 @@ def get_events_service():
     return results
 
 
-#
-# def add_main_article_test_questions():
-#     for event in Event.select():
-#         # Перевірити, чи існує основний тест для цього event
-#         existing_tests = MainArticleTest.select().where(MainArticleTest.event == event)
-#         if existing_tests:
-#             Test.create(
-#                 title=event.text,
-#                 test_type='Main Article',
-#                 event=event
-#             )
-#
-#
-# add_main_article_test_questions()
-#
-#
-# def add_sub_article_tests():
-#     for subtopic in Subtopic.select():
-#         # Перевірити, чи існують підтести для цього subtopic
-#         existing_tests = SubArticleTest.select().where(SubArticleTest.subtopic == subtopic)
-#         if existing_tests:
-#             Test.create(
-#                 title=subtopic.title,
-#                 test_type='Sub Article',
-#                 event=subtopic.event  # Потрібно встановити подію через Subtopic
-#             )
-#
-#
-# add_sub_article_tests()
-
-
 def format_user_data(user, include_tests=False):
     user_data = {
         'user_name': user.user_name,
@@ -163,6 +132,8 @@ def register_user_service(data):
     user_name = data.get('userName')
     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
 
+    logging.info(f"Registering user with email: {email} and hashed password: {hashed_password}")
+
     if User.select().where(User.user_name == user_name).exists():
         return {'message': 'User name already exists.'}, 400
 
@@ -187,6 +158,7 @@ def login_user_service(data):
     try:
         logging.info(f"Attempting to log in user with email: {email}")
         user = User.get(User.email == email)
+        logging.info(f"Stored hashed password: {user.password}")
         if bcrypt.check_password_hash(user.password, password):
             access_token = create_access_token(identity=user.id)
             refresh_token = create_refresh_token(identity=user.id)
