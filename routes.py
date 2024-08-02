@@ -10,7 +10,8 @@ from services import (
     update_profile_service,
     delete_profile_service,
     refresh_token_service,
-    update_user_service, get_user_data_service
+    get_user_data_service,
+    reset_achievements_service
 )
 
 
@@ -60,7 +61,13 @@ def register_routes(app):
     def refresh():
         return refresh_token_service(get_jwt_identity())
 
-    @app.route('/update_user', methods=['POST'])
-    @login_required
-    def update_user():
-        return update_user_service(request.json, current_user)
+    # @app.route('/update_user', methods=['POST'])
+    # @login_required
+    # def update_user():
+    #     return update_user_service(request.json, current_user)
+
+    @app.route('/api/user/reset-achievements', methods=['POST'])
+    @jwt_required()
+    def reset_achievements():
+        user_id = get_jwt_identity()
+        return reset_achievements_service(user_id)

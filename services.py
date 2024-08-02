@@ -1,5 +1,5 @@
+from flask import jsonify
 from flask_bcrypt import Bcrypt
-
 from initialize import update_user_test_completion
 from models import User, Event, MainArticleTest, Subtopic, SubArticleTest, Content, UserResult, Test, UserTestCompletion
 from datetime import datetime
@@ -10,69 +10,50 @@ import logging
 
 bcrypt = Bcrypt()
 
+# Логування налаштувань
+logging.basicConfig(level=logging.INFO)
 
-def get_test_id_for_event(event):
-    # Отримати ідентифікатор тесту для основних тестів
-    test = Test.select().where(Test.event == event, Test.test_type == 'Main Article').first()
+
+def get_test_id(test_type, event=None, subtopic=None):
+    if event:
+        test = Test.select().where(Test.event == event, Test.test_type == test_type).first()
+    elif subtopic:
+        test = Test.select().where(Test.event == subtopic.event, Test.test_type == test_type).first()
     return test.id if test else None
 
 
-def get_test_id_for_subtopic(subtopic):
-    # Отримати ідентифікатор тесту для підтем
-    test = Test.select().where(Test.event == subtopic.event, Test.test_type == 'Sub Article').first()
-    return test.id if test else None
+def get_test_questions(test_model, event=None, subtopic=None):
+    if event:
+        questions = test_model.select().where(test_model.event == event)
+    elif subtopic:
+        questions = test_model.select().where(test_model.subtopic == subtopic)
 
-
-def get_sub_article_tests(subtopic):
-    # Отримати всі тести для підтем
-    sub_article_test_questions = SubArticleTest.select().where(SubArticleTest.subtopic == subtopic)
-    sub_article_tests_data = [{
-        'id': test.id,  # Ідентифікатор питання
+    return [{
+        'id': test.id,
         'question': test.question,
         'options': json.loads(test.options),
         'correct_answers': json.loads(test.correct_answers)
-    } for test in sub_article_test_questions]
-
-    return sub_article_tests_data
-
-
-def get_main_article_test_questions(event):
-    # Отримати всі тести для події
-    main_article_test_questions = MainArticleTest.select().where(MainArticleTest.event == event)
-    main_article_test_questions_data = [{
-        'id': test.id,  # Ідентифікатор питання
-        'question': test.question,
-        'options': json.loads(test.options),
-        'correct_answers': json.loads(test.correct_answers),
-    } for test in main_article_test_questions]
-
-    return main_article_test_questions_data
+    } for test in questions]
 
 
 def get_events_service():
     results = []
     for event in Event.select():
-        main_article_test_questions_data = get_main_article_test_questions(event)
+        main_article_test_questions_data = get_test_questions(MainArticleTest, event=event)
 
         subtopics_data = []
         for subtopic in Subtopic.select().where(Subtopic.event == event):
-            sub_article_tests_data = get_sub_article_tests(subtopic)
+            sub_article_tests_data = get_test_questions(SubArticleTest, subtopic=subtopic)
             subtopics_data.append({
                 'id': subtopic.id,
                 'title': subtopic.title,
                 'content': json.loads(subtopic.content),
                 'sub_article_test_questions': sub_article_tests_data,
-                'sub_article_test_id': subtopic.test_id  # Ідентифікатор тесту для підтем
+                'sub_article_test_id': subtopic.test_id
             })
 
-            content_items = Content.select().where(Content.event == event)
-            content_data = []
-
-            for content_item in content_items:
-                content_data.append({
-                    'type': content_item.type,
-                    'text': content_item.text
-                })
+        content_items = Content.select().where(Content.event == event)
+        content_data = [{'type': item.type, 'text': item.text} for item in content_items]
 
         results.append({
             'id': event.id,
@@ -80,10 +61,9 @@ def get_events_service():
             'text': event.text,
             'achieved': event.achieved,
             'main_article_test_questions': main_article_test_questions_data,
-            'main_article_test_id': event.test_id,  # Ідентифікатор тесту для основних тестів
+            'main_article_test_id': event.test_id,
             'subtopics': subtopics_data,
             'content': content_data
-            # Припускаючи, що є один контент для події
         })
 
     return results
@@ -99,27 +79,13 @@ def format_user_data(user, include_tests=False):
 
     if include_tests:
         user_tests = UserTestCompletion.select().where(UserTestCompletion.user_id == user.id)
-        user_tests_data = []
-        for user_test in user_tests:
-            try:
-                test = user_test.test  # Отримати тест
-                user_tests_data.append({
-                    'test_id': test.id,
-                    'test_type': user_test.test_type,
-                    'event_id': test.event.id if test.event else None,
-                    'parent_article_title': user_test.test_title,
-                    'completed': user_test.completed
-                })
-            except Test.DoesNotExist:
-                # Логування помилки або будь-яка інша обробка
-                print(f'Test with id {user_test.test_id} does not exist.')
-                user_tests_data.append({
-                    'test_id': None,
-                    'test_type': user_test.test_type,
-                    'event_id': None,
-                    'parent_article_title': user_test.test_title,
-                    'completed': user_test.completed
-                })
+        user_tests_data = [{
+            'test_id': user_test.test.id if user_test.test else None,
+            'test_type': user_test.test_type,
+            'event_id': user_test.test.event.id if user_test.test and user_test.test.event else None,
+            'parent_article_title': user_test.test_title,
+            'completed': user_test.completed
+        } for user_test in user_tests]
 
         user_data['tests_completed_list'] = user_tests_data
 
@@ -132,7 +98,7 @@ def register_user_service(data):
     user_name = data.get('userName')
     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
 
-    logging.info(f"Registering user with email: {email} and hashed password: {hashed_password}")
+    logging.info(f"Registering user with email: {email}")
 
     if User.select().where(User.user_name == user_name).exists():
         return {'message': 'User name already exists.'}, 400
@@ -141,7 +107,7 @@ def register_user_service(data):
         user = User.create(email=email, password=hashed_password, user_name=user_name)
         access_token = create_access_token(identity=user.id)
         refresh_token = create_refresh_token(identity=user.id)
-        user_data = format_user_data(user, include_tests=True)  # Включаємо тести
+        user_data = format_user_data(user, include_tests=True)
         return {
                    'message': 'User registered successfully.',
                    'token': access_token,
@@ -158,15 +124,10 @@ def login_user_service(data):
     try:
         logging.info(f"Attempting to log in user with email: {email}")
         user = User.get(User.email == email)
-        logging.info(f"Stored hashed password: {user.password}")
         if bcrypt.check_password_hash(user.password, password):
             access_token = create_access_token(identity=user.id)
             refresh_token = create_refresh_token(identity=user.id)
-
-            user_data = format_user_data(user, include_tests=True)  # Включаємо тести
-
-            logging.info(f"User tests data: {user_data.get('tests')}")
-
+            user_data = format_user_data(user, include_tests=True)
             return {
                 'success': True,
                 'token': access_token,
@@ -184,7 +145,7 @@ def login_user_service(data):
 def get_user_data_service(user_id):
     try:
         user = User.get(User.id == user_id)
-        user_data = format_user_data(user, include_tests=True)  # Включаємо тести
+        user_data = format_user_data(user, include_tests=True)
         return {'success': True, 'user_data': user_data}
     except User.DoesNotExist:
         return {'success': False, 'message': 'User not found'}
@@ -230,19 +191,6 @@ def refresh_token_service(user_id):
     return {'token': access_token}, 200
 
 
-def update_user_service(data, current_user):
-    user_name = data.get('user_name')
-
-    if not user_name:
-        return {'error': 'Username is required'}, 400
-
-    user = User.get(User.id == current_user.id)
-    user.user_name = user_name
-    user.save()
-    return {'success': True}, 200
-
-
-# Приклад функції для отримання user_id з токена (використовуйте свою логіку)
 def complete_test_service(user_id, data):
     test_id = data.get('test_id')
     completed = data.get('completed', False)
@@ -256,35 +204,36 @@ def complete_test_service(user_id, data):
     if not user or not test:
         return {'error': 'Invalid User ID or Test ID'}, 404
 
-    # Перевірити, чи вже існує запис для цієї комбінації
-    user_test_completion = UserTestCompletion.get_or_none(
-        UserTestCompletion.user == user,
-        UserTestCompletion.test == test
+    user_test_completion, created = UserTestCompletion.get_or_create(
+        user=user,
+        test=test,
+        defaults={'completed': completed, 'date_completed': datetime.now()}
     )
 
-    if user_test_completion:
-        # Оновити існуючий запис
+    if not created:
         user_test_completion.completed = completed
         user_test_completion.date_completed = datetime.now()
         user_test_completion.save()
-    else:
-        # Створити новий запис
-        UserTestCompletion.create(
-            user=user,
-            test=test,
-            test_title=test.title,
-            test_type=test.test_type,
-            event=test.event,
-            completed=completed,
-            date_completed=datetime.now()
-        )
 
-    # Оновлення поля current_level та additional_tests_completed
     update_user_test_completion(user, test, completed)
 
-    # Повернення даних користувача після завершення тесту
     user_data = format_user_data(user, include_tests=True)
-    return {
-        'success': True,
-        'user_data': user_data
-    }
+    return {'success': True, 'user_data': user_data}
+
+
+def reset_achievements_service(user_id):
+    user = User.get(User.id == user_id)
+
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    # Видалити всі записи про завершені тести
+    UserTestCompletion.delete().where(UserTestCompletion.user == user).execute()
+
+    # Скинути рівень користувача
+    user.current_level = 0
+    user.additional_tests_completed = 0
+    user.save()
+    user_data = format_user_data(user, include_tests=True)
+
+    return jsonify({'message': 'User achievements have been reset to the initial level', 'user_data': user_data}), 200
