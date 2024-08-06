@@ -119,11 +119,12 @@ def register_user_service(data):
 
 
 def login_user_service(data):
-    email = data.get('email')
+    user_name = data.get('user_name')
     password = data.get('password')
     try:
-        logging.info(f"Attempting to log in user with email: {email}")
-        user = User.get(User.email == email)
+        logging.info(f"Attempting to log in user with user_name: {user_name}")
+        user = User.get(User.user_name == user_name)
+
         if bcrypt.check_password_hash(user.password, password):
             access_token = create_access_token(identity=user.id)
             refresh_token = create_refresh_token(identity=user.id)
@@ -135,11 +136,11 @@ def login_user_service(data):
                 'user_data': user_data
             }
         else:
-            logging.warning("Invalid email or password")
-            return {'success': False, 'message': 'Invalid email or password'}, 401
+            logging.warning("Invalid user_name or password")
+            return {'success': False, 'message': 'Invalid user_name or password'}, 401
     except User.DoesNotExist:
         logging.error("User does not exist")
-        return {'success': False, 'message': 'Invalid email or password'}, 401
+        return {'success': False, 'message': 'Invalid user_name or password'}, 401
 
 
 def get_user_data_service(user_id):
