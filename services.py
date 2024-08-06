@@ -121,6 +121,8 @@ def register_user_service(data):
 def login_user_service(data):
     user_name = data.get('user_name')
     password = data.get('password')
+    logging.info(f"user_name: {user_name}")
+    logging.info(f"user_name: {password}")
     try:
         logging.info(f"Attempting to log in user with user_name: {user_name}")
         user = User.get(User.user_name == user_name)
