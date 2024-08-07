@@ -7,6 +7,7 @@ from flask_jwt_extended import create_access_token, create_refresh_token
 from peewee import IntegrityError
 import json
 import logging
+from  initialize import add_user_test_completions
 
 bcrypt = Bcrypt()
 
@@ -105,18 +106,21 @@ def register_user_service(data):
 
     try:
         user = User.create(email=email, password=hashed_password, user_name=user_name)
+
+        # Додавання записів у таблицю UserTestCompletion
+        add_user_test_completions(user)
+
         access_token = create_access_token(identity=user.id)
         refresh_token = create_refresh_token(identity=user.id)
         user_data = format_user_data(user, include_tests=True)
         return {
-                   'message': 'User registered successfully.',
-                   'token': access_token,
-                   'refresh_token': refresh_token,
-                   'user_data': user_data
-               }, 201
+            'message': 'User registered successfully.',
+            'token': access_token,
+            'refresh_token': refresh_token,
+            'user_data': user_data
+        }, 201
     except IntegrityError:
         return {'message': 'Email already exists.'}, 400
-
 
 def login_user_service(data):
     user_name = data.get('user_name')

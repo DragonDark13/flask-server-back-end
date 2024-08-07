@@ -5,6 +5,9 @@ from models import MainArticleTest, User, Subtopic, UserTestCompletion, UserResu
 from data import events_data
 import json
 from datetime import datetime
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 
 def initialize_user_test_completions():
@@ -128,7 +131,33 @@ def add_sub_article_tests():
             )
 
 
-def add_user_test_completions():
+def add_user_test_completions(user):
+    # Отримати всі тести
+    tests = Test.select()
+
+    # Створити записи в таблиці UserTestCompletion
+    with DATABASE.atomic():
+        for test in tests:
+            # Перевірити, чи вже існує запис для цієї комбінації
+            exists = UserTestCompletion.select().where(
+                UserTestCompletion.user == user,
+                UserTestCompletion.test == test
+            ).exists()
+
+            if not exists:
+                UserTestCompletion.create(
+                    user=user,
+                    user_name=user.user_name,
+                    test_title=test.title,
+                    event=test.event,  # Потрібно встановити подію через Test
+                    test=test,
+                    test_type=test.test_type,  # Додаємо поле test_type
+                    completed=False,  # За замовчуванням встановлено False
+                    date_completed=datetime.now()
+                )
+
+
+def add_all_users_test_completions():
     # Отримати всіх користувачів
     users = User.select()
 

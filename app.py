@@ -4,7 +4,7 @@ from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from routes import register_routes
 from initialize import create_tables, update_data, add_main_article_tests, add_sub_article_tests, \
-    add_user_test_completions
+    add_all_users_test_completions, initialize_user_test_completions
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -28,7 +28,7 @@ add_main_article_tests()
 
 add_sub_article_tests()
 
-add_user_test_completions()
+add_all_users_test_completions()
 # initialize_user_test_completions()
 
 if __name__ == '__main__':
