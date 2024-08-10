@@ -1,3 +1,5 @@
+from peewee import DoesNotExist
+
 from config import DATABASE
 from models import MainArticleTest, User, Subtopic, UserTestCompletion, UserResult, Content, SubArticleTest, Test, \
     Event, \
@@ -112,11 +114,15 @@ def add_main_article_tests():
         # Перевірити, чи існує основний тест для цього event
         existing_tests = MainArticleTest.select().where(MainArticleTest.event == event)
         if existing_tests:
-            Test.create(
+            # Створення запису в таблиці Test
+            test = Test.create(
                 title=event.text,
                 test_type='Main Article',
                 event=event
             )
+            # Додавання test_id до події
+            event.test_id = test.id
+            event.save()  # Зберегти зміни до бази даних
 
 
 def add_sub_article_tests():
@@ -124,11 +130,15 @@ def add_sub_article_tests():
         # Перевірити, чи існують підтести для цього subtopic
         existing_tests = SubArticleTest.select().where(SubArticleTest.subtopic == subtopic)
         if existing_tests:
-            Test.create(
+            # Створення запису в таблиці Test
+            test = Test.create(
                 title=subtopic.title,
                 test_type='Sub Article',
                 event=subtopic.event  # Потрібно встановити подію через Subtopic
             )
+            # Додавання test_id до події
+            subtopic.test_id = test.id
+            subtopic.save()  # Зберегти зміни до бази даних
 
 
 def add_user_test_completions(user):
@@ -194,3 +204,18 @@ def update_user_test_completion(user, test, completed):
         elif test.test_type == 'Sub Article':
             user.additional_tests_completed += 1
         user.save()
+
+
+def clean_user_test_completions():
+    # Отримуємо всі записи з UserTestCompletion
+    user_test_completions = UserTestCompletion.select()
+
+    for completion in user_test_completions:
+        try:
+            # Перевіряємо, чи існує користувач у таблиці User
+            User.get(User.id == completion.user_id)
+        except DoesNotExist:
+            # Якщо користувач не існує, видаляємо відповідний запис
+            completion.delete_instance()
+
+# Виклик функції під час ініціалізації програми
