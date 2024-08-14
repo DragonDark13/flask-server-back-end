@@ -9,7 +9,7 @@ import json
 from datetime import datetime
 import logging
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s')
 
 
 def initialize_user_test_completions():
@@ -52,14 +52,14 @@ def update_data():
         # Додавання нових записів
         for event_data in events_data:
             # Створення запису події
-            print("Processing event data:", event_data)  # Додайте це тут
+            logging.info("Processing event data: %s", event_data)
 
             event = Event.create(
                 date=event_data["date"],
                 text=event_data["text"],
                 achieved=event_data.get("achieved", None),
             )
-            print("Created event:", event)  # Додайте це тут
+            logging.info("Created event: %s", event)
 
             # Зберегти Content
             if "content" in event_data:
