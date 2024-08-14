@@ -7,7 +7,7 @@ from flask_jwt_extended import create_access_token, create_refresh_token
 from peewee import IntegrityError
 import json
 import logging
-from  initialize import add_user_test_completions
+from initialize import add_user_test_completions
 
 bcrypt = Bcrypt()
 
@@ -56,16 +56,18 @@ def get_events_service():
         content_items = Content.select().where(Content.event == event)
         content_data = [{'type': item.type, 'text': item.text} for item in content_items]
 
-        results.append({
-            'id': event.id,
-            'date': event.date,
-            'text': event.text,
-            'achieved': event.achieved,
-            'main_article_test_questions': main_article_test_questions_data,
-            'main_article_test_id': event.test_id,
-            'subtopics': subtopics_data,
-            'content': content_data
-        })
+        # Перевірка наявності main_article_test_questions та content
+        if main_article_test_questions_data and content_data:
+            results.append({
+                'id': event.id,
+                'date': event.date,
+                'text': event.text,
+                'achieved': event.achieved,
+                'main_article_test_questions': main_article_test_questions_data,
+                'main_article_test_id': event.test_id,
+                'subtopics': subtopics_data,
+                'content': content_data
+            })
 
     return results
 
@@ -114,13 +116,14 @@ def register_user_service(data):
         refresh_token = create_refresh_token(identity=user.id)
         user_data = format_user_data(user, include_tests=True)
         return {
-            'message': 'User registered successfully.',
-            'token': access_token,
-            'refresh_token': refresh_token,
-            'user_data': user_data
-        }, 201
+                   'message': 'User registered successfully.',
+                   'token': access_token,
+                   'refresh_token': refresh_token,
+                   'user_data': user_data
+               }, 201
     except IntegrityError:
         return {'message': 'Email already exists.'}, 400
+
 
 def login_user_service(data):
     user_name = data.get('user_name')
