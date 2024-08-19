@@ -1,41 +1,73 @@
 from flask import jsonify
 from flask_bcrypt import Bcrypt
-from initialize import update_user_test_completion
-from models import User, Event, MainArticleTest, Subtopic, SubArticleTest, Content,  Test, UserTestCompletion
-from datetime import datetime
 from flask_jwt_extended import create_access_token, create_refresh_token
 from peewee import IntegrityError
+from datetime import datetime
 import json
 import logging
-from initialize import add_user_test_completions
+from models import User, Event, MainArticleTest, Subtopic, SubArticleTest, Content, Test, UserTestCompletion
+from initialize import add_user_test_completions, update_user_test_completion
 
 bcrypt = Bcrypt()
-
-# Логування налаштувань
 logging.basicConfig(level=logging.INFO)
 
 
-def get_test_id(test_type, event=None, subtopic=None):
-    if event:
-        test = Test.select().where(Test.event == event, Test.test_type == test_type).first()
-    elif subtopic:
-        test = Test.select().where(Test.event == subtopic.event, Test.test_type == test_type).first()
-    return test.id if test else None
+# Utility functions
+def get_user_by_id(user_id):
+    return User.get_or_none(User.id == user_id)
 
 
-def get_test_questions(test_model, event=None, subtopic=None):
-    if event:
-        questions = test_model.select().where(test_model.event == event)
-    elif subtopic:
-        questions = test_model.select().where(test_model.subtopic == subtopic)
+def get_test_by_id(test_id):
+    return Test.get_or_none(Test.id == test_id)
 
-    return [{
-        'id': test.id,
-        'question': test.question,
-        'options': json.loads(test.options),
-        'correct_answers': json.loads(test.correct_answers)
-    } for test in questions]
 
+def hash_password(password):
+    return bcrypt.generate_password_hash(password).decode('utf-8')
+
+
+def verify_password(hashed_password, password):
+    return bcrypt.check_password_hash(hashed_password, password)
+
+
+def create_tokens(identity):
+    return {
+        'access_token': create_access_token(identity=identity),
+        'refresh_token': create_refresh_token(identity=identity)
+    }
+
+
+def format_error(message, code=400):
+    return jsonify({'message': message}), code
+
+
+def format_success(message, data=None):
+    response = {'message': message}
+    if data:
+        response.update(data)
+    return jsonify(response), 200
+
+
+def format_user_data(user, include_tests=False):
+    user_data = {
+        'user_name': user.user_name,
+        'email': user.email,
+        'current_level': user.current_level,
+        'additional_tests_completed': user.additional_tests_completed
+    }
+
+    if include_tests:
+        user_tests = UserTestCompletion.select().where(UserTestCompletion.user_id == user.id)
+        user_tests_data = [{
+            'test_id': user_test.test.id if user_test.test else None,
+            'test_type': user_test.test_type,
+            'event_id': user_test.test.event.id if user_test.test and user_test.test.event else None,
+            'parent_article_title': user_test.test_title,
+            'completed': user_test.completed
+        } for user_test in user_tests]
+
+        user_data['tests_completed_list'] = user_tests_data
+
+    return user_data
 
 def get_events_service():
     results = []
@@ -72,133 +104,91 @@ def get_events_service():
     return results
 
 
-def format_user_data(user, include_tests=False):
-    user_data = {
-        'user_name': user.user_name,
-        'email': user.email,
-        'current_level': user.current_level,
-        'additional_tests_completed': user.additional_tests_completed
-    }
-
-    if include_tests:
-        user_tests = UserTestCompletion.select().where(UserTestCompletion.user_id == user.id)
-        user_tests_data = [{
-            'test_id': user_test.test.id if user_test.test else None,
-            'test_type': user_test.test_type,
-            'event_id': user_test.test.event.id if user_test.test and user_test.test.event else None,
-            'parent_article_title': user_test.test_title,
-            'completed': user_test.completed
-        } for user_test in user_tests]
-
-        user_data['tests_completed_list'] = user_tests_data
-
-    return user_data
-
-
+# Service functions
 def register_user_service(data):
     email = data.get('email')
     password = data.get('password')
     user_name = data.get('userName')
-    hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-
-    logging.info(f"Registering user with email: {email}")
 
     if User.select().where(User.user_name == user_name).exists():
-        return {'message': 'User name already exists.'}, 400
+        return format_error('User name already exists.')
 
     try:
-        user = User.create(email=email, password=hashed_password, user_name=user_name)
-
-        # Додавання записів у таблицю UserTestCompletion
+        user = User.create(email=email, password=hash_password(password), user_name=user_name)
         add_user_test_completions(user)
-
-        access_token = create_access_token(identity=user.id)
-        refresh_token = create_refresh_token(identity=user.id)
+        tokens = create_tokens(user.id)
         user_data = format_user_data(user, include_tests=True)
-        return {
-                   'message': 'User registered successfully.',
-                   'token': access_token,
-                   'refresh_token': refresh_token,
-                   'user_data': user_data
-               }, 201
+        return format_success('User registered successfully.', {'tokens': tokens, 'user_data': user_data})
     except IntegrityError:
-        return {'message': 'Email already exists.'}, 400
+        return format_error('Email already exists.')
 
 
 def login_user_service(data):
     user_name = data.get('user_name')
     password = data.get('password')
-    logging.info(f"user_name: {user_name}")
-    logging.info(f"user_name: {password}")
-    try:
-        logging.info(f"Attempting to log in user with user_name: {user_name}")
-        user = User.get(User.user_name == user_name)
 
-        if bcrypt.check_password_hash(user.password, password):
-            access_token = create_access_token(identity=user.id)
-            refresh_token = create_refresh_token(identity=user.id)
-            user_data = format_user_data(user, include_tests=True)
-            return {
-                'success': True,
-                'token': access_token,
-                'refresh_token': refresh_token,
-                'user_data': user_data
-            }
-        else:
-            logging.warning("Invalid user_name or password")
-            return {'success': False, 'message': 'Invalid user_name or password'}, 401
-    except User.DoesNotExist:
-        logging.error("User does not exist")
-        return {'success': False, 'message': 'Invalid user_name or password'}, 401
+    user = get_user_by_id(user_name)
+    if not user or not verify_password(user.password, password):
+        return format_error('Invalid user_name or password', 401)
+
+    tokens = create_tokens(user.id)
+    user_data = format_user_data(user, include_tests=True)
+    return format_success('Login successful.', {'tokens': tokens, 'user_data': user_data})
 
 
 def get_user_data_service(user_id):
-    try:
-        user = User.get(User.id == user_id)
-        user_data = format_user_data(user, include_tests=True)
-        return {'success': True, 'user_data': user_data}
-    except User.DoesNotExist:
-        return {'success': False, 'message': 'User not found'}
+    user = get_user_by_id(user_id)
+    if not user:
+        return format_error('User not found', 404)
+
+    user_data = format_user_data(user, include_tests=True)
+    return format_success('User data retrieved successfully.', {'user_data': user_data})
 
 
 def change_password_service(data, user_id):
     current_password = data.get('currentPassword')
     new_password = data.get('newPassword')
 
-    user = User.get(User.id == user_id)
-    if not bcrypt.check_password_hash(user.password, current_password):
-        return {'message': 'Current password is incorrect'}, 400
+    user = get_user_by_id(user_id)
+    if not user or not verify_password(user.password, current_password):
+        return format_error('Current password is incorrect', 400)
 
-    hashed_new_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
-    user.password = hashed_new_password
+    user.password = hash_password(new_password)
     user.save()
-    return {'message': 'Password updated successfully'}, 200
+    return format_success('Password updated successfully.')
 
 
 def update_profile_service(data, user_id):
     user_name = data.get('userName')
 
     if not user_name:
-        return {'message': 'Username is required.'}, 400
+        return format_error('Username is required.')
 
-    user = User.get(User.id == user_id)
+    user = get_user_by_id(user_id)
     if User.select().where((User.user_name == user_name) & (User.id != user_id)).exists():
-        return {'message': 'Username already taken.'}, 400
+        return format_error('Username already taken.')
 
     user.user_name = user_name
     user.save()
-    return {'message': 'Profile updated successfully'}, 200
+    return format_success('Profile updated successfully.')
 
 
 def delete_profile_service(user_id):
-    user = User.get(User.id == user_id)
+    user = get_user_by_id(user_id)
+    if not user:
+        return format_error('User not found', 404)
+
     user.delete_instance()
-    return {'message': 'Profile deleted successfully'}, 200
+    return format_success('Profile deleted successfully.')
 
 
 def refresh_token_service(user_id):
-    access_token = create_access_token(identity=user_id)
-    return {'token': access_token}, 200
+    user = get_user_by_id(user_id)
+    if not user:
+        return format_error('User not found', 404)
+
+    token = create_access_token(identity=user_id)
+    return format_success('Token refreshed successfully.', {'token': token})
 
 
 def complete_test_service(user_id, data):
@@ -206,13 +196,13 @@ def complete_test_service(user_id, data):
     completed = data.get('completed', False)
 
     if not user_id or not test_id:
-        return {'error': 'User ID and Test ID are required'}, 400
+        return format_error('User ID and Test ID are required', 400)
 
-    user = User.get_or_none(User.id == user_id)
-    test = Test.get_or_none(Test.id == test_id)
+    user = get_user_by_id(user_id)
+    test = get_test_by_id(test_id)
 
     if not user or not test:
-        return {'error': 'Invalid User ID or Test ID'}, 404
+        return format_error('Invalid User ID or Test ID', 404)
 
     user_test_completion, created = UserTestCompletion.get_or_create(
         user=user,
@@ -226,24 +216,19 @@ def complete_test_service(user_id, data):
         user_test_completion.save()
 
     update_user_test_completion(user, test, completed)
-
     user_data = format_user_data(user, include_tests=True)
-    return {'success': True, 'user_data': user_data}
+    return format_success('Test completed successfully.', {'user_data': user_data})
 
 
 def reset_achievements_service(user_id):
-    user = User.get(User.id == user_id)
-
+    user = get_user_by_id(user_id)
     if not user:
-        return jsonify({'message': 'User not found'}), 404
+        return format_error('User not found', 404)
 
-    # Видалити всі записи про завершені тести
-    UserTestCompletion.delete().where(UserTestCompletion.user == user).execute()
+    UserTestCompletion.update(completed=0).where(UserTestCompletion.user == user).execute()
 
-    # Скинути рівень користувача
     user.current_level = 0
     user.additional_tests_completed = 0
     user.save()
     user_data = format_user_data(user, include_tests=True)
-
-    return jsonify({'message': 'User achievements have been reset to the initial level', 'user_data': user_data}), 200
+    return format_success('User achievements have been reset to the initial level.', {'user_data': user_data})
