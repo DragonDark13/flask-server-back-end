@@ -1,7 +1,7 @@
 from peewee import DoesNotExist
 
 from config import DATABASE
-from models import MainArticleTest, User, Subtopic, UserTestCompletion, UserResult, Content, SubArticleTest, Test, \
+from models import MainArticleTest, User, Subtopic, UserTestCompletion,Content, SubArticleTest, Test, \
     Event, \
     Counter
 from data import events_data
@@ -25,7 +25,7 @@ def create_tables():
     with DATABASE:
         DATABASE.create_tables(
             [User, Event, MainArticleTest,
-             Subtopic, SubArticleTest, Content, UserResult,
+             Subtopic, SubArticleTest, Content,
              Test, UserTestCompletion,
              Counter],
             safe=True
@@ -46,7 +46,6 @@ def update_data():
         Content.delete().execute()
         Event.delete().execute()
         Test.delete().execute()
-        UserResult.delete().execute()
         Counter.delete().execute()
 
         # Додавання нових записів

@@ -1,7 +1,7 @@
 from flask import jsonify
 from flask_bcrypt import Bcrypt
 from initialize import update_user_test_completion
-from models import User, Event, MainArticleTest, Subtopic, SubArticleTest, Content, UserResult, Test, UserTestCompletion
+from models import User, Event, MainArticleTest, Subtopic, SubArticleTest, Content,  Test, UserTestCompletion
 from datetime import datetime
 from flask_jwt_extended import create_access_token, create_refresh_token
 from peewee import IntegrityError

@@ -1,9 +1,6 @@
-from datetime import datetime
-
 from flask_login import UserMixin
 from peewee import Model, CharField, TextField, ForeignKeyField, DateTimeField, BooleanField, IntegerField
 from config import DATABASE
-import json
 
 
 class BaseModel(Model):
@@ -75,11 +72,6 @@ class User(BaseModel, UserMixin):
     country = CharField(null=True)
     current_level = IntegerField(default=0)  # Додано нове поле для рівня проходження
     additional_tests_completed = IntegerField(default=0)  # Додано нове поле для кількості додаткових тестів
-
-
-class UserResult(BaseModel):
-    user = ForeignKeyField(User, backref='results')
-    result = TextField()
 
 
 class UserTestCompletion(BaseModel):
