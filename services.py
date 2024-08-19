@@ -69,6 +69,21 @@ def format_user_data(user, include_tests=False):
 
     return user_data
 
+
+def get_test_questions(test_model, event=None, subtopic=None):
+    if event:
+        questions = test_model.select().where(test_model.event == event)
+    elif subtopic:
+        questions = test_model.select().where(test_model.subtopic == subtopic)
+
+    return [{
+        'id': test.id,
+        'question': test.question,
+        'options': json.loads(test.options),
+        'correct_answers': json.loads(test.correct_answers)
+    } for test in questions]
+
+
 def get_events_service():
     results = []
     for event in Event.select():
