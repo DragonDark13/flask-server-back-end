@@ -1,5 +1,7 @@
-from app import DATABASE, User
 from flask_bcrypt import Bcrypt
+
+from config import DATABASE
+from models import User
 
 bcrypt = Bcrypt()
 
@@ -9,7 +11,7 @@ def create_test_user():
         DATABASE.create_tables([User], safe=True)
 
         email = 'test@example.com'
-        password = 'testpassword'
+        password = 'A&6Kx$Md&R@c9Edl'
         user_name = "Test User"
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
 

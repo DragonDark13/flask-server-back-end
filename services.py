@@ -193,6 +193,8 @@ def delete_profile_service(user_id):
     if not user:
         return format_error('User not found', 404)
 
+    UserTestCompletion.delete().where(UserTestCompletion.user == user).execute()
+
     user.delete_instance()
     return format_success('Profile deleted successfully.')
 
