@@ -17,6 +17,10 @@ def get_user_by_id(user_id):
     return User.get_or_none(User.id == user_id)
 
 
+def get_user_by_name(user_name):
+    return User.get_or_none(User.user_name == user_name)
+
+
 def get_test_by_id(test_id):
     return Test.get_or_none(Test.id == test_id)
 
@@ -26,6 +30,8 @@ def hash_password(password):
 
 
 def verify_password(hashed_password, password):
+    logging.info(f"Stored hashed password: {hashed_password}")
+    logging.info(f"Provided password: {bcrypt.generate_password_hash(password).decode('utf-8')}")
     return bcrypt.check_password_hash(hashed_password, password)
 
 
@@ -41,10 +47,21 @@ def format_error(message, code=400):
 
 
 def format_success(message, data=None):
-    response = {'message': message}
+    response = {
+        'success': True,
+        'message': message}
     if data:
         response.update(data)
     return jsonify(response), 200
+
+
+def format_success_for_registration(message, data=None):
+    response = {
+        'success': True,
+        'message': message}
+    if data:
+        response.update(data)
+    return jsonify(response), 201
 
 
 def format_user_data(user, include_tests=False):
@@ -133,7 +150,8 @@ def register_user_service(data):
         add_user_test_completions(user)
         tokens = create_tokens(user.id)
         user_data = format_user_data(user, include_tests=True)
-        return format_success('User registered successfully.', {'tokens': tokens, 'user_data': user_data})
+        return format_success_for_registration('User registered successfully.',
+                                               {'tokens': tokens, 'user_data': user_data})
     except IntegrityError:
         return format_error('Email already exists.')
 
@@ -142,7 +160,15 @@ def login_user_service(data):
     user_name = data.get('user_name')
     password = data.get('password')
 
-    user = get_user_by_id(user_name)
+    logging.basicConfig(level=logging.INFO)
+
+    logging.info(f"User Name: {user_name}")
+    logging.info(f"Password: {password}")
+    #
+    # print(f"User Name: {user_name}")
+    # print(f"Password: {password}")
+
+    user = get_user_by_name(user_name)
     if not user or not verify_password(user.password, password):
         return format_error('Invalid user_name or password', 401)
 

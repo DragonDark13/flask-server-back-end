@@ -10,9 +10,9 @@ def create_test_user():
     with DATABASE.atomic():
         DATABASE.create_tables([User], safe=True)
 
-        email = 'test@example.com'
-        password = 'A&6Kx$Md&R@c9Edl'
-        user_name = "Test User"
+        email = 'test1@example.com'
+        password = 'c0-Fmv7*J9hl'
+        user_name = "TestUser"
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
 
         try:
