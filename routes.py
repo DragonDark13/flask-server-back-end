@@ -24,7 +24,8 @@ def register_routes(app):
     @jwt_required()
     def complete_test():
         user_id = get_jwt_identity()  # Отримати user_id з JWT токена
-        return jsonify(complete_test_service(user_id, request.json))
+        complete_test_response = complete_test_service(user_id, request.json)
+        return complete_test_response[0], complete_test_response[1]
 
     @app.route('/register', methods=['POST'])
     def register():
@@ -39,7 +40,7 @@ def register_routes(app):
     def get_user_data():
         user_id = get_jwt_identity()
         user_data = get_user_data_service(user_id)
-        return jsonify(user_data)
+        return user_data[0], user_data[1]  # повертає JSON та статус
 
     @app.route('/change-password', methods=['POST'])
     @jwt_required()
