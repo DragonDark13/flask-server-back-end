@@ -47,7 +47,7 @@ events_data = [
                 ]
             ],
             "correctAnswers": [
-                1, 3, 3
+                0, 2, 2
             ]
         },
         "achieved": "Опис досягнення",
@@ -110,7 +110,7 @@ events_data = [
                         ]
                     ],
                     "correctAnswers": [
-                        1, 3, 4
+                        0, 2, 2
                     ]
                 }
             },
@@ -183,7 +183,7 @@ events_data = [
                         ]
                     ],
                     "correctAnswers": [
-                        1, 2, 3
+                        0, 1, 2
                     ]
                 }
             },
@@ -263,7 +263,7 @@ events_data = [
                         ]
                     ],
                     "correctAnswers": [
-                        4, 3, 4
+                        3, 3, 3
                     ]
                 }
             }
@@ -371,7 +371,7 @@ events_data = [
                         ]
                     ],
                     "correctAnswers": [
-                        1, 4, 1
+                        1, 2, 1
                     ]
                 }
             },
@@ -423,7 +423,7 @@ events_data = [
                         ]
                     ],
                     "correctAnswers": [
-                        4, 3, 3
+                        3, 3, 3
                     ]
                 }
             }
