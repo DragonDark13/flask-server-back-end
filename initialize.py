@@ -1,7 +1,7 @@
 from peewee import DoesNotExist
 
 from config import DATABASE
-from models import MainArticleTest, User, Subtopic, UserTestCompletion,Content, SubArticleTest, Test, \
+from models import MainArticleTest, User, Subtopic, UserTestCompletion, Content, SubArticleTest, Test, \
     Event, \
     Counter
 from data import events_data
@@ -169,13 +169,18 @@ def add_user_test_completions(user):
 def add_all_users_test_completions():
     # Отримати всіх користувачів
     users = User.select()
+    logging.info(f"Retrieved {len(users)} users")
 
     # Отримати всі тести
     tests = Test.select()
+    logging.info(f"Retrieved {len(tests)} tests")
 
     # Створити записи в таблиці UserTestCompletion
     with DATABASE.atomic():
+
         for user in users:
+            logging.info(f"User ID: {user.id}, User Name: {user.user_name}")
+
             for test in tests:
                 # Перевірити, чи вже існує запис для цієї комбінації
                 exists = UserTestCompletion.select().where(
@@ -184,16 +189,22 @@ def add_all_users_test_completions():
                 ).exists()
 
                 if not exists:
-                    UserTestCompletion.create(
-                        user=user,
-                        user_name=user.user_name,
-                        test_title=test.title,
-                        event=test.event,  # Потрібно встановити подію через Test
-                        test=test,
-                        test_type=test.test_type,  # Додаємо поле test_type
-                        completed=False,  # За замовчуванням встановлено False
-                        date_completed=datetime.now()
-                    )
+                    try:
+                        UserTestCompletion.create(
+                            user=user,
+                            user_name=user.user_name if user.user_name else "default_user_name",  # Переконайтесь, що user_name не є NULL
+                            test_title=test.title,
+                            event=test.event,  # Потрібно встановити подію через Test
+                            test=test,
+                            test_type=test.test_type,  # Додаємо поле test_type
+                            completed=False,  # За замовчуванням встановлено False
+                            date_completed=datetime.now()
+                        )
+                        logging.info(f"Created UserTestCompletion for user {user.id} and test {test.id}")
+                    except Exception as e:
+                        logging.error(f"Error creating UserTestCompletion for user {user.id} and test {test.id}: {e}")
+
+    logging.info("Completed adding all users' test completions")
 
 
 def update_user_test_completion(user, test, completed):
