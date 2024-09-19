@@ -38,7 +38,14 @@ clean_user_test_completions()
 
 @app.before_request
 def before_request():
-    DATABASE.connect()
+    if DATABASE.is_closed():
+        DATABASE.connect()
+
+
+@app.teardown_request
+def teardown_request(exception):
+    if not DATABASE.is_closed():
+        DATABASE.close()
 
 
 @app.after_request
