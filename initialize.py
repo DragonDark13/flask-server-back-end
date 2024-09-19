@@ -51,14 +51,14 @@ def update_data():
         # Додавання нових записів
         for event_data in events_data:
             # Створення запису події
-            logging.info("Processing event data: %s", event_data)
+            # logging.info("Processing event data: %s", event_data)
 
             event = Event.create(
                 date=event_data["date"],
                 text=event_data["text"],
                 achieved=event_data.get("achieved", None),
             )
-            logging.info("Created event: %s", event)
+            # logging.info("Created event: %s", event)
 
             # Зберегти Content
             if "content" in event_data:
