@@ -1,74 +1,100 @@
 from flask import jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from flask_login import login_required, current_user
 from services import (
-    get_events_service,
-    complete_test_service,
-    register_user_service,
-    login_user_service,
-    change_password_service,
-    update_profile_service,
-    delete_profile_service,
-    refresh_token_service,
-    get_user_data_service,
+    get_events_service, complete_test_service, register_user_service,
+    login_user_service, change_password_service, update_profile_service,
+    delete_profile_service, refresh_token_service, get_user_data_service,
     reset_achievements_service
 )
+import logging
+from flask_caching import Cache  # Кешування
+from functools import wraps
 
+# Налаштування логування
+logging.basicConfig(level=logging.INFO)
 
+# Налаштування кешування
+cache = Cache(config={'CACHE_TYPE': 'simple'})  # Simple кеш (можна змінити на Redis або інший тип кешу)
+
+# Декоратор для автоматичного отримання user_id
+def get_user_id(func):
+    @wraps(func)
+    @jwt_required()
+    def wrapper(*args, **kwargs):
+        user_id = get_jwt_identity()
+        return func(user_id, *args, **kwargs)
+    return wrapper
+
+# Універсальна функція для валідації, логування та обробки помилок
+def validate_and_log(service_function):
+    try:
+        response = service_function()
+        logging.info(f"Response: {response}")
+        return response
+    except Exception as e:
+        logging.error(f"Error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# Реєстрація маршрутів
 def register_routes(app):
+    # Ініціалізація кешу
+    cache.init_app(app)
+
     @app.route('/get-events', methods=['GET'])
+    @cache.cached(timeout=300)  # Кешування на 5 хвилин (300 секунд)
     def get_events():
-        return jsonify(get_events_service())
+        logging.info("Fetching events...")
+        return validate_and_log(get_events_service)
 
     @app.route('/complete-test', methods=['POST'])
-    @jwt_required()
-    def complete_test():
-        user_id = get_jwt_identity()  # Отримати user_id з JWT токена
-        complete_test_response = complete_test_service(user_id, request.json)
-        return complete_test_response[0], complete_test_response[1]
+    @get_user_id
+    def complete_test(user_id):
+        logging.info(f"User {user_id} is completing a test")
+        return validate_and_log(lambda: complete_test_service(user_id, request.json))
 
     @app.route('/register', methods=['POST'])
     def register():
-        return register_user_service(request.get_json())
+        logging.info("User registration attempt")
+        return validate_and_log(lambda: register_user_service(request.get_json()))
 
     @app.route('/login', methods=['POST'])
     def login():
-        return login_user_service(request.json)
+        logging.info("User login attempt")
+        return validate_and_log(lambda: login_user_service(request.json))
 
     @app.route('/api/user', methods=['GET'])
-    @jwt_required()
-    def get_user_data():
-        user_id = get_jwt_identity()
-        user_data = get_user_data_service(user_id)
-        return user_data[0], user_data[1]  # повертає JSON та статус
+    @get_user_id
+    def get_user_data(user_id):
+        logging.info(f"Fetching user data for user {user_id}")
+        return validate_and_log(lambda: get_user_data_service(user_id))
 
     @app.route('/change-password', methods=['POST'])
-    @jwt_required()
-    def change_password():
-        return change_password_service(request.get_json(), get_jwt_identity())
+    @get_user_id
+    def change_password(user_id):
+        logging.info(f"User {user_id} is changing password")
+        return validate_and_log(lambda: change_password_service(request.get_json(), user_id))
 
     @app.route('/update-profile', methods=['POST'])
-    @jwt_required()
-    def update_profile():
-        return update_profile_service(request.get_json(), get_jwt_identity())
+    @get_user_id
+    def update_profile(user_id):
+        logging.info(f"User {user_id} is updating profile")
+        return validate_and_log(lambda: update_profile_service(request.get_json(), user_id))
 
     @app.route('/delete-profile', methods=['DELETE'])
-    @jwt_required()
-    def delete_profile():
-        return delete_profile_service(get_jwt_identity())
+    @get_user_id
+    def delete_profile(user_id):
+        logging.info(f"User {user_id} is deleting profile")
+        return validate_and_log(lambda: delete_profile_service(user_id))
 
     @app.route('/refresh', methods=['POST'])
     @jwt_required(refresh=True)
     def refresh():
-        return refresh_token_service(get_jwt_identity())
-
-    # @app.route('/update_user', methods=['POST'])
-    # @login_required
-    # def update_user():
-    #     return update_user_service(request.json, current_user)
+        logging.info("Refreshing token")
+        return validate_and_log(lambda: refresh_token_service(get_jwt_identity()))
 
     @app.route('/api/user/reset-achievements', methods=['POST'])
-    @jwt_required()
-    def reset_achievements():
-        user_id = get_jwt_identity()
-        return reset_achievements_service(user_id)
+    @get_user_id
+    def reset_achievements(user_id):
+        logging.info(f"User {user_id} is resetting achievements")
+        return validate_and_log(lambda: reset_achievements_service(user_id))
+
