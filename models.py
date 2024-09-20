@@ -69,7 +69,7 @@ class User(BaseModel, UserMixin):
     email = CharField(unique=True)
     password = CharField()
     user_name = CharField(null=True)
-    country = CharField(null=True)
+    country = CharField(default='UK')
     current_level = IntegerField(default=0)  # Додано нове поле для рівня проходження
     additional_tests_completed = IntegerField(default=0)  # Додано нове поле для кількості додаткових тестів
 

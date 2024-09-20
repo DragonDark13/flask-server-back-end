@@ -199,19 +199,42 @@ def change_password_service(data, user_id):
     return format_success('Password updated successfully.')
 
 
-def update_profile_service(data, user_id):
-    user_name = data.get('userName')
+def update_profile_service(data: dict, user_id: int):
+    # Логування об'єкта data
+    logging.info(f"Data received: {data}")
+    user_name = data.get('user_name')
+    email = data.get('email')
+    country = data.get('country')
 
     if not user_name:
         return format_error('Username is required.')
+
+    if not country:
+        return format_error('Country is required.')
 
     user = get_user_by_id(user_id)
     if User.select().where((User.user_name == user_name) & (User.id != user_id)).exists():
         return format_error('Username already taken.')
 
+    if not email:
+        return format_error('email is required.')
+
+        # Перевірка на унікальність електронної пошти
+    if email:
+        if User.select().where((User.email == email) & (User.id != user_id)).exists():
+            return format_error('Email already taken.')
+
+        # Оновлення електронної пошти
+        user.email = email
+
+    if country:
+        user.country = country
+
+        # Оновлення імені користувача
+
     user.user_name = user_name
     user.save()
-    return format_success('Profile updated successfully.')
+    return format_success('Profile updated successfully.', {'user_name': user.user_name, 'email': user.email})
 
 
 def delete_profile_service(user_id):

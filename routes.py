@@ -16,6 +16,7 @@ logging.basicConfig(level=logging.INFO)
 # Налаштування кешування
 cache = Cache(config={'CACHE_TYPE': 'simple'})  # Simple кеш (можна змінити на Redis або інший тип кешу)
 
+
 # Декоратор для автоматичного отримання user_id
 def get_user_id(func):
     @wraps(func)
@@ -23,7 +24,9 @@ def get_user_id(func):
     def wrapper(*args, **kwargs):
         user_id = get_jwt_identity()
         return func(user_id, *args, **kwargs)
+
     return wrapper
+
 
 # Універсальна функція для валідації, логування та обробки помилок
 def validate_and_log(service_function):
@@ -35,6 +38,7 @@ def validate_and_log(service_function):
         logging.error(f"Error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+
 # Реєстрація маршрутів
 def register_routes(app):
     # Ініціалізація кешу
@@ -43,13 +47,14 @@ def register_routes(app):
     @app.route('/get-events', methods=['GET'])
     @cache.cached(timeout=300)  # Кешування на 5 хвилин (300 секунд)
     def get_events():
-        logging.info("Fetching events...")
+        args = request.args  # Параметри GET-запиту
+        logging.info(f"Fetching events with parameters: {args}")
         return validate_and_log(get_events_service)
 
     @app.route('/complete-test', methods=['POST'])
     @get_user_id
     def complete_test(user_id):
-        logging.info(f"User {user_id} is completing a test")
+        logging.info(f"User {user_id} is completing a test with data: {request.json}")
         return validate_and_log(lambda: complete_test_service(user_id, request.json))
 
     @app.route('/register', methods=['POST'])
@@ -59,7 +64,9 @@ def register_routes(app):
 
     @app.route('/login', methods=['POST'])
     def login():
-        logging.info("User login attempt")
+        data = request.get_json()
+        headers = request.headers
+        logging.info(f"User login attempt with data: {data}, headers: {headers}")
         return validate_and_log(lambda: login_user_service(request.json))
 
     @app.route('/api/user', methods=['GET'])
@@ -77,7 +84,7 @@ def register_routes(app):
     @app.route('/update-profile', methods=['POST'])
     @get_user_id
     def update_profile(user_id):
-        logging.info(f"User {user_id} is updating profile")
+        logging.info(f"User {user_id} is updating profile with data: {request.get_json()}")
         return validate_and_log(lambda: update_profile_service(request.get_json(), user_id))
 
     @app.route('/delete-profile', methods=['DELETE'])
@@ -97,4 +104,3 @@ def register_routes(app):
     def reset_achievements(user_id):
         logging.info(f"User {user_id} is resetting achievements")
         return validate_and_log(lambda: reset_achievements_service(user_id))
-
